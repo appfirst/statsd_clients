@@ -81,7 +81,7 @@ class Statsd(object):
         udp_sock = socket(AF_INET, SOCK_DGRAM)
         try:
             for stat in sampled_data.keys():
-                value = data[stat]
+                value = sampled_data[stat]
                 send_data = "%s:%s" % (stat, value)
                 udp_sock.sendto(send_data, addr)
         except:
