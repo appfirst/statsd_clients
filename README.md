@@ -1,16 +1,18 @@
+This is the library of clients for both Etsy-standard StatsD and AppFirst-extended StatsD+
+
 StatsD Example Clients
 ======================
 
 Here's a bunch of example code contributed by the communinty for interfacing with statsd in a variety of languages.
 
-    Etsy/StatsD.pm    - perl module
-    perl-example.pl   - perl using Etsy/StatsD module
-    StatsdClient.java - JAVA
-    csharp_example.cs - C#
-    php-example.php   - PHP
-    python_example.py - Python
-    ruby_example.rb   - Ruby
-    statsd.erl        - Erlang
+    perl/Etsy/StatsD.pm      - Perl module
+    perl/perl-example.pl     - Perl using Etsy/StatsD module
+    java/StatsdClient.java   - JAVA
+    csharp/csharp_example.cs - C#
+    php/php-example.php      - PHP
+    python/                  - Python
+    ruby/ruby_example.rb     - Ruby
+    erlang/statsd.erl        - Erlang
 
 Third Party StatsD Libraries
 ============================
