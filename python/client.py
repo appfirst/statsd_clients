@@ -14,6 +14,9 @@ statsd_port = 8125
 Sends statistics to the stats daemon over UDP
 Sends statistics to the appfirst collector over UDP
 '''
+import random
+from socket import socket, AF_INET, SOCK_DGRAM
+
 class Statsd(object):
 
     @staticmethod
@@ -69,7 +72,26 @@ class Statsd(object):
         Statsd.send(stats, sampleRate, message)
 
     @staticmethod
+    def _build_message(self, data, sample_rate=1, message=None):
+        sampled_data = {}
+
+        if(sample_rate < 1):
+            if random.random() <= sample_rate:
+                for stat in data.keys():
+                    value = sampled_data[stat]
+                    sampled_data[stat] = "%s|@%s" %(value, sample_rate)
+        else:
+            sampled_data=data
+
+        return sampled_data
+
+    @staticmethod
     def send(data, sample_rate=1, message=None):
+        sampled_data = Statsd_build_message(data, sample_rate, message)
+        Statsd_send_udp(data, addr)
+
+    @staticmethod
+    def _send_udp( data, addr):
         """
         Squirt the metrics over UDP
         """
@@ -81,22 +103,10 @@ class Statsd(object):
         except Error:
             exit(1)
 
-        sampled_data = {}
-
-        if(sample_rate < 1):
-            import random
-            if random.random() <= sample_rate:
-                for stat in data.keys():
-                    value = sampled_data[stat]
-                    sampled_data[stat] = "%s|@%s" %(value, sample_rate)
-        else:
-            sampled_data=data
-
-        from socket import socket, AF_INET, SOCK_DGRAM
         udp_sock = socket(AF_INET, SOCK_DGRAM)
         try:
-            for stat in sampled_data.keys():
-                value = sampled_data[stat]
+            for stat in data.keys():
+                value = data[stat]
                 send_data = "%s:%s" % (stat, value)
                 udp_sock.sendto(send_data, addr)
         except:
