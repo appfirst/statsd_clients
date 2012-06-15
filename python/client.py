@@ -14,6 +14,7 @@ statsd_port = 8125
 Sends statistics to the stats daemon over UDP
 Sends statistics to the appfirst collector over UDP
 '''
+import time
 import random
 from socket import socket, AF_INET, SOCK_DGRAM
 
@@ -28,7 +29,7 @@ class Statsd(object):
         """
         stats = {}
         stats[bucket] = "%d|g" % reading
-        Statsd.send(stats, sample_rate, message)
+        Statsd.send(stats, sample_rate, message, int(time.time()))
 
     @staticmethod
     def timing(bucket, elapse, sample_rate=1, message=None):
@@ -57,6 +58,7 @@ class Statsd(object):
         >>> Statsd.decrement('some.int')
         """
         Statsd.update_stats(buckets, -1, sample_rate, message)
+
     @staticmethod
     def update_stats(buckets, delta=1, sampleRate=1, message=None):
         """
@@ -72,22 +74,33 @@ class Statsd(object):
         Statsd.send(stats, sampleRate, message)
 
     @staticmethod
-    def _build_message(self, data, sample_rate=1, message=None):
-        sampled_data = {}
+    def _build_message(data, sample_rate=1, message=None, timestamp=None):
+        # the format will be position-invariant:
+        # bucket: f0    | f1    | f2                     | f3
+        # bucket: value | unit  | sampele_rate/timestamp | message
 
-        if(sample_rate < 1):
+        # field2(f2) is either sample_rate or timestamp
+        field2 = ""
+        if (sample_rate < 1):
             if random.random() <= sample_rate:
-                for stat in data.keys():
-                    value = sampled_data[stat]
-                    sampled_data[stat] = "%s|@%s" %(value, sample_rate)
-        else:
-            sampled_data=data
+                field2 = str(sample_rate)
+        elif timestamp:
+            field2 = str(timestamp)
 
-        return sampled_data
+        # when message is there, we always keep field2 even if it's blank:
+        # bucket:2|c||some_message
+        if message:
+            for stat in data.keys():
+                data[stat] += "|%s|%s" % (field2, message)
+        elif field2 != "":
+            for stat in data.keys():
+                data[stat] += "|%s" % field2
+
+        return data
 
     @staticmethod
-    def send(data, sample_rate=1, message=None):
-        sampled_data = Statsd._build_message(data, sample_rate, message)
+    def send(data, sample_rate=1, message=None, timestamp=None):
+        sampled_data = Statsd._build_message(data, sample_rate, message, timestamp)
         Statsd._send_udp(data)
 
     @staticmethod
