@@ -87,11 +87,11 @@ class Statsd(object):
 
     @staticmethod
     def send(data, sample_rate=1, message=None):
-        sampled_data = Statsd_build_message(data, sample_rate, message)
-        Statsd_send_udp(data, addr)
+        sampled_data = Statsd._build_message(data, sample_rate, message)
+        Statsd._send_udp(data)
 
     @staticmethod
-    def _send_udp( data, addr):
+    def _send_udp(data):
         """
         Squirt the metrics over UDP
         """
