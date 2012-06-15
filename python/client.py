@@ -17,7 +17,7 @@ Sends statistics to the appfirst collector over UDP
 class Statsd(object):
 
     @staticmethod
-    def gauge(bucket, reading, sample_rate=1):
+    def gauge(bucket, reading, sample_rate=1, message=None):
         """
         Log timing information
         >>> from python_example import Statsd
@@ -25,10 +25,10 @@ class Statsd(object):
         """
         stats = {}
         stats[bucket] = "%d|g" % reading
-        Statsd.send(stats, sample_rate)
+        Statsd.send(stats, sample_rate, message)
 
     @staticmethod
-    def timing(bucket, elapse, sample_rate=1):
+    def timing(bucket, elapse, sample_rate=1, message=None):
         """
         Log timing information
         >>> from python_example import Statsd
@@ -36,26 +36,26 @@ class Statsd(object):
         """
         stats = {}
         stats[bucket] = "%d|ms" % elapse
-        Statsd.send(stats, sample_rate)
+        Statsd.send(stats, sample_rate, message)
 
     @staticmethod
-    def increment(buckets, sample_rate=1):
+    def increment(buckets, sample_rate=1, message=None):
         """
         Increments one or more stats counters
         >>> Statsd.increment('some.int')
         >>> Statsd.increment('some.int',0.5)
         """
-        Statsd.update_stats(buckets, 1, sample_rate)
+        Statsd.update_stats(buckets, 1, sample_rate, message)
 
     @staticmethod
-    def decrement(buckets, sample_rate=1):
+    def decrement(buckets, sample_rate=1, message=None):
         """
         Decrements one or more stats counters
         >>> Statsd.decrement('some.int')
         """
-        Statsd.update_stats(buckets, -1, sample_rate)
+        Statsd.update_stats(buckets, -1, sample_rate, message)
     @staticmethod
-    def update_stats(buckets, delta=1, sampleRate=1):
+    def update_stats(buckets, delta=1, sampleRate=1, message=None):
         """
         Updates one or more stats counters by arbitrary amounts
         >>> Statsd.update_stats('some.int',10)
@@ -66,10 +66,10 @@ class Statsd(object):
         for bucket in buckets:
             stats[bucket] = "%s|c" % delta
 
-        Statsd.send(stats, sampleRate)
+        Statsd.send(stats, sampleRate, message)
 
     @staticmethod
-    def send(data, sample_rate=1):
+    def send(data, sample_rate=1, message=None):
         """
         Squirt the metrics over UDP
         """
