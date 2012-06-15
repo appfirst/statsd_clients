@@ -100,7 +100,7 @@ class Statsd(object):
 
     @staticmethod
     def send(data, sample_rate=1, message=None, timestamp=None):
-        sampled_data = Statsd._build_message(data, sample_rate, message, timestamp)
+        data = Statsd._build_message(data, sample_rate, message, timestamp)
         Statsd._send_udp(data)
 
     @staticmethod
