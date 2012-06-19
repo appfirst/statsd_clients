@@ -115,14 +115,13 @@ class Statsd(object):
     @staticmethod
     def _build_message(data, sample_rate=1, message=None, timestamp=None):
         # the format will be position-invariant:
-        # bucket: f0    | f1    | f2                     | f3
-        # bucket: value | unit  | sampele_rate/timestamp | message
+        # bucket: field0 | field1 | field2                 | field3
+        # bucket: value  | unit   | sampele_rate/timestamp | message
 
-        # field2(f2) is either sample_rate or timestamp
+        # field2 is either sample_rate or timestamp
         field2 = ""
         if (sample_rate < 1):
-            if random.random() <= sample_rate:
-                field2 = str(sample_rate)
+            field2 = str(sample_rate)
         elif timestamp:
             field2 = str(timestamp)
 
@@ -139,6 +138,8 @@ class Statsd(object):
 
     @staticmethod
     def send(data, sample_rate=1, message=None, timestamp=None):
+        if sample_rate < 1 and random.random() > sample_rate:
+            return
         data = Statsd._build_message(data, sample_rate, message, timestamp)
         Statsd._transport.emit(data)
 

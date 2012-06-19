@@ -60,6 +60,8 @@ class AFTransport(UDPTransport):
         if self.mqueue:
             self._emit(data)
         else:
+            if self.verbosity:
+                print "AFCollector not installed, Using UDP Transport"
             UDPTransport.emit(self, data)
 
     def _emit(self, data):
