@@ -101,6 +101,11 @@ namespace Statsd
 
         protected bool Send(double sampleRate, params string[] stats)
         {
+            return Send(null, 0, sampleRate, stats);
+        }
+
+        protected bool Send(string message, decimal timestamp, double sampleRate, params string[] stats)
+        {
             var retval = false; // didn't send anything
             if (sampleRate < 1.0)
             {
@@ -129,7 +134,6 @@ namespace Statsd
 
             return retval;
         }
-
         protected bool DoSend(string stat)
         {
             var data = Encoding.Default.GetBytes(stat + "\n");
