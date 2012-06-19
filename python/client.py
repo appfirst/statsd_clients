@@ -2,7 +2,7 @@
 Created on Jun 14, 2012
 
 @author: Steve Ivy <steveivy@gmail.com>
-@modifier: yangming <yangming@appfirst.com>
+@co-author: yangming <yangming@appfirst.com>
 http://www.appfirst.com
 
 python client for appfirst statsd+
@@ -18,7 +18,46 @@ import time
 import random
 from socket import socket, AF_INET, SOCK_DGRAM
 
+#---------------------------------------------------------------------------
+#   Default UDP Transport
+#---------------------------------------------------------------------------
+class UDPTransport(object):
+    def emit(self, data):
+        """
+        Squirt the metrics over UDP
+        """
+        try:
+            import local_settings as settings
+            host = settings.statsd_host
+            port = settings.statsd_port
+            addr=(host, port)
+        except Error as e:
+            exit(1)
+
+        udp_sock = socket(AF_INET, SOCK_DGRAM)
+        try:
+            for stat in data.keys():
+                value = data[stat]
+                send_data = "%s:%s" % (stat, value)
+                udp_sock.sendto(send_data, addr)
+        except:
+            import sys
+            from pprint import pprint
+            print "Unexpected error:", pprint(sys.exc_info())
+            pass # we don't care
+
+    def close(self):
+        pass
+
+#---------------------------------------------------------------------------
+#   Default UDP Transport
+#---------------------------------------------------------------------------
 class Statsd(object):
+    _transport = UDPTransport()
+
+    @staticmethod
+    def set_transport(transport):
+        Statsd._transport = transport
 
     @staticmethod
     def gauge(bucket, reading, sample_rate=1, message=None):
@@ -101,29 +140,21 @@ class Statsd(object):
     @staticmethod
     def send(data, sample_rate=1, message=None, timestamp=None):
         data = Statsd._build_message(data, sample_rate, message, timestamp)
-        Statsd._send_udp(data)
+        Statsd._transport.emit(data)
 
     @staticmethod
-    def _send_udp(data):
-        """
-        Squirt the metrics over UDP
-        """
-        try:
-            import local_settings as settings
-            host = settings.statsd_host
-            port = settings.statsd_port
-            addr=(host, port)
-        except Error:
-            exit(1)
+    def shutdown():
+        Statsd._transport.close()
 
-        udp_sock = socket(AF_INET, SOCK_DGRAM)
+#Let's try and shutdown automatically on application exit...
+try:
+    import atexit
+    atexit.register(Statsd.shutdown)
+except ImportError: # for Python versions < 2.0
+    def exithook(status, old_exit=sys.exit):
         try:
-            for stat in data.keys():
-                value = data[stat]
-                send_data = "%s:%s" % (stat, value)
-                udp_sock.sendto(send_data, addr)
-        except:
-            import sys
-            from pprint import pprint
-            print "Unexpected error:", pprint(sys.exc_info())
-            pass # we don't care
+            Statsd.shutdown()
+        finally:
+            old_exit(status)
+
+    sys.exit = exithook
