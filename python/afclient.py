@@ -13,8 +13,6 @@ except Exception as e:
 
 from client import *
 
-STATSD_SEVERITY = 3
-
 class AFTransport(UDPTransport):
     def __init__(self, useUDP=False):
         self.mqueue_name = "/afcollectorapi"
@@ -65,6 +63,7 @@ class AFTransport(UDPTransport):
             UDPTransport.emit(self, data)
 
     def _emit(self, data):
+        STATSD_SEVERITY = 3
         try:
             for stat in data.keys():
                 value = data[stat]
