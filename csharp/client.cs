@@ -94,6 +94,37 @@ namespace Statsd
             return Send(sampleRate, keys.Select(key => String.Format("{0}:{1}|c", key, magnitude)).ToArray());
         }
 
+        protected string CreateMessage(string stat,double sampleRate, string message, decimal timestamp)
+        {
+            //bucket: field0 | field1 | field2                  | field3
+            //bucket: value  | unit   | sampele_rate/timestamp  | message
+
+            string messageString = stat;
+            string field2 = "";
+
+
+            if (sampleRate < 1.0)
+            {
+                field2 = String.Format("@{0:f}", sampleRate);
+            }
+            else if (timestamp != 0)
+            {
+                field2 = String.Format("{0}", timestamp);
+            }
+
+
+            if (message != null)
+            {
+                messageString += String.Format("|{0}|{1}", field2, message);
+            }
+            else if (field2 != "")
+            {
+                messageString += String.Format("|{0}", field2);
+            }
+
+            return messageString;
+        }
+        
         protected bool Send(String stat, double sampleRate)
         {
             return Send(sampleRate, stat);
@@ -107,6 +138,8 @@ namespace Statsd
         protected bool Send(string message, decimal timestamp, double sampleRate, params string[] stats)
         {
             var retval = false; // didn't send anything
+
+
             if (sampleRate < 1.0)
             {
                 foreach (var stat in stats)
