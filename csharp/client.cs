@@ -15,26 +15,54 @@ namespace Statsd
             udpClient = new UdpClient(host, port);
         }
         
+
+        //Gauge Functions
         public bool Gauge(string key, int value)
         {
-            return Gauge(key, value, 1.0);
+            return GaugeWithMessage(null, key, value);
         }
 
         public bool Gauge(string key, int value, double sampleRate)
         {
-            return Send(sampleRate, String.Format("{0}:{1:d}|g", key, value));
+            return GaugeWithMessage(null, key, value, sampleRate);
         }
 
+
+        //GaugeWithMessage Functions
+        public bool GaugeWithMessage(string message, string key, int value)
+        {
+            return Gauge(key, value, 1.0);
+        }
+
+        public bool GaugeWithMessage(string message, string key, int value, double sampleRate)
+        {
+            return Send(message, sampleRate, String.Format("{0}:{1:d}|g", key, value));
+        }
+
+
+        //Timing Functions
         public bool Timing(string key, int value)
         {
-            return Timing(key, value, 1.0);
+            return TimingWithMessage(null, key, value);
         }
 
         public bool Timing(string key, int value, double sampleRate)
         {
-            return Send(sampleRate, String.Format("{0}:{1:d}|ms", key, value));
+            return TimingWithMessage(null, key, value, sampleRate);
         }
 
+        //TimingWithMessage Functions
+        public bool TimingWithMessage(string message, string key, int value)
+        {
+            return TimingWithMessage(message, key, value, 1.0);
+        }
+
+        public bool TimingWithMessage(string message, string key, int value, double sampleRate)
+        {
+            return Send(message, sampleRate, String.Format("{0}:{1:d}|ms", key, value));
+        }
+
+        // Decrement Functions
         public bool Decrement(string key)
         {
             return Increment(key, -1, 1.0);
@@ -68,31 +96,110 @@ namespace Statsd
             return Increment(magnitude, sampleRate, keys);
         }
 
+        // Decrement Functions
+        public bool DecrementWithMessage(string message, string key)
+        {
+            return IncrementWithMessage(message, key, -1, 1.0);
+        }
+
+        public bool DecrementWithMessage(string message, string key, int magnitude)
+        {
+            return DecrementWithMessage(message, key, magnitude, 1.0);
+        }
+
+        public bool DecrementWithMessage(string message, string key, int magnitude, double sampleRate)
+        {
+            magnitude = magnitude < 0 ? magnitude : -magnitude;
+            return IncrementWithMessage(message, key, magnitude, sampleRate);
+        }
+
+        public bool DecrementWithMessage(string message, params string[] keys)
+        {
+            return IncrementWithMessage(message, -1, 1.0, keys);
+        }
+
+        public bool DecrementWithMessage(string message, int magnitude, params string[] keys)
+        {
+            magnitude = magnitude < 0 ? magnitude : -magnitude;
+            return IncrementWithMessage(message, magnitude, 1.0, keys);
+        }
+
+        public bool DecrementWithMessage(string message, int magnitude, double sampleRate, params string[] keys)
+        {
+            magnitude = magnitude < 0 ? magnitude : -magnitude;
+            return IncrementWithMessage(message, magnitude, sampleRate, keys);
+        }
+
+
+        // Increment Functions
         public bool Increment(string key)
         {
-            return Increment(key, 1, 1.0);
+            return IncrementWithMessage(null, key);
         }
 
         public bool Increment(string key, int magnitude)
         {
-            return Increment(key, magnitude, 1.0);
+            return IncrementWithMessage(null, key, magnitude);
         }
 
         public bool Increment(string key, int magnitude, double sampleRate)
         {
-            string stat = String.Format("{0}:{1}|c", key, magnitude);
-            return Send(stat, sampleRate);
+            return IncrementWithMessage(null, key, magnitude, sampleRate);
         }
 
         public bool Increment(params string[] keys)
         {
-            return Increment(1, 1.0, keys);
+            return IncrementWithMessage(null, keys);
+        }
+
+        public bool Increment(int magnitude, params string[] keys)
+        {
+            return IncrementWithMessage(null, magnitude, keys);
         }
 
         public bool Increment(int magnitude, double sampleRate, params string[] keys)
         {
-            return Send(sampleRate, keys.Select(key => String.Format("{0}:{1}|c", key, magnitude)).ToArray());
+            return IncrementWithMessage(null, magnitude, sampleRate, keys);
         }
+
+        // IncrementWithMessage Functions
+        public bool IncrementWithMessage(string message, string key)
+        {
+            return IncrementWithMessage(message, key, 1, 1.0);
+        }
+
+        public bool IncrementWithMessage(string message, string key, int magnitude)
+        {
+            return IncrementWithMessage(message, key, magnitude, 1.0);
+        }
+
+        public bool IncrementWithMessage(string message, string key, int magnitude, double sampleRate)
+        {
+            string stat = String.Format("{0}:{1}|c", key, magnitude);
+            return Send(message, stat, sampleRate);
+        }
+
+        public bool IncrementWithMessage(string message, params string[] keys)
+        {
+            return IncrementWithMessage(message, 1, 1.0, keys);
+        }
+
+        public bool IncrementWithMessage(string message, int magnitude, params string[] keys)
+        {
+            //Made a change here to original logic!! 
+            //Original: magnitude = magnitude < 0 ? magnitude : -magnitude;
+            //This made the magintude always negative when this function was called
+
+            magnitude = magnitude < 0 ? -magnitude : magnitude;
+            return IncrementWithMessage(message, magnitude, 1.0, keys);
+        }
+
+        public bool IncrementWithMessage(string message, int magnitude, double sampleRate, params string[] keys)
+        {
+            return Send(message, sampleRate, keys.Select(key => String.Format("{0}:{1}|c", key, magnitude)).ToArray());
+        }
+
+
 
         protected string CreateMessage(string stat,double sampleRate, string message, decimal timestamp)
         {
@@ -125,14 +232,14 @@ namespace Statsd
             return messageString;
         }
         
-        protected bool Send(String stat, double sampleRate)
+        protected bool Send(string message, string stat, double sampleRate)
         {
-            return Send(sampleRate, stat);
+            return Send(message, sampleRate, stat);
         }
 
-        protected bool Send(double sampleRate, params string[] stats)
+        protected bool Send(string message, double sampleRate, params string[] stats)
         {
-            return Send(null, 0, sampleRate, stats);
+            return Send(message, 0, sampleRate, stats);
         }
 
         protected bool Send(string message, decimal timestamp, double sampleRate, params string[] stats)
@@ -146,7 +253,7 @@ namespace Statsd
                 {
                     if (random.NextDouble() <= sampleRate)
                     {
-                        var statFormatted = String.Format("{0}|@{1:f}", stat, sampleRate);
+                        var statFormatted = CreateMessage(stat,sampleRate,message,timestamp);
                         if (DoSend(statFormatted))
                         {
                             retval = true;
@@ -158,7 +265,8 @@ namespace Statsd
             {
                 foreach (var stat in stats)
                 {
-                    if (DoSend(stat))
+                    var statFormatted = CreateMessage(stat, sampleRate, message, timestamp);
+                    if (DoSend(statFormatted))
                     {
                         retval = true;
                     }
