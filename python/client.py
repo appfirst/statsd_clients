@@ -60,7 +60,7 @@ class Statsd(object):
         Statsd._transport = transport
 
     @staticmethod
-    def gauge(bucket, reading, sample_rate=1, message=None):
+    def gauge(bucket, reading, message=None):
         """
         Log timing information
         >>> from python_example import Statsd
@@ -68,7 +68,7 @@ class Statsd(object):
         """
         stats = {}
         stats[bucket] = "%d|g" % reading
-        Statsd.send(stats, sample_rate, message, int(time.time()))
+        Statsd.send(stats, message=message, timestamp=int(time.time()))
 
     @staticmethod
     def timing(bucket, elapse, sample_rate=1, message=None):
@@ -121,7 +121,7 @@ class Statsd(object):
         # field2 is either sample_rate or timestamp
         field2 = ""
         if (sample_rate < 1):
-            field2 = str(sample_rate)
+            field2 = "@%s" % sample_rate
         elif timestamp:
             field2 = str(timestamp)
 
