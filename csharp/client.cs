@@ -84,6 +84,11 @@ namespace Statsd
             return Send(stat, sampleRate);
         }
 
+        public bool Increment(params string[] keys)
+        {
+            return Increment(1, 1.0, keys);
+        }
+
         public bool Increment(int magnitude, double sampleRate, params string[] keys)
         {
             return Send(sampleRate, keys.Select(key => String.Format("{0}:{1}|c", key, magnitude)).ToArray());
