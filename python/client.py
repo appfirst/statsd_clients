@@ -50,7 +50,7 @@ class UDPTransport(object):
         pass
 
 #---------------------------------------------------------------------------
-#   Default UDP Transport
+#   Statsd Client
 #---------------------------------------------------------------------------
 class Statsd(object):
     _transport = UDPTransport()

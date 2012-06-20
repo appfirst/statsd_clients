@@ -3,7 +3,7 @@
 """
 The AppFirst Statsd Transport
 """
-__all__=['AfTransport']
+__all__=['AFTransport', 'Statsd', 'UDPTransport']
 
 import logging, os, client
 try:
@@ -12,13 +12,15 @@ except Exception as e:
     ctypes = None
 
 from client import *
+STATSD_SEVERITY = 3
 
 class AFTransport(UDPTransport):
-    def __init__(self, useUDP=False):
+    def __init__(self, severity=STATSD_SEVERITY, useUDP=False):
         self.mqueue_name = "/afcollectorapi"
         self.flags = 04001
         self.msgLen = 2048
         self.mqueue = None
+        self.severity = severity
         self.verbosity = False
         self.shlib = self.loadlib() if not useUDP else None
 
@@ -63,7 +65,6 @@ class AFTransport(UDPTransport):
             UDPTransport.emit(self, data)
 
     def _emit(self, data):
-        STATSD_SEVERITY = 3
         try:
             for stat in data.keys():
                 value = data[stat]
@@ -72,7 +73,7 @@ class AFTransport(UDPTransport):
                 post = send_data[:mlen]
                 if self.verbosity:
                     print mlen, post
-                rc = self.shlib.mq_send(self.mqueue, post, len(post), STATSD_SEVERITY)
+                rc = self.shlib.mq_send(self.mqueue, post, len(post), self.severity)
                 if (rc < 0):
                     self._handleError(record, "mq_send")
         except Exception as e:
