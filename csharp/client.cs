@@ -6,7 +6,6 @@ using System.Text;
 using System.IO;
 using Microsoft.Win32.SafeHandles;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Diagnostics;
 using System.Collections.Generic;
@@ -210,6 +209,20 @@ namespace Statsd
         }
 
 
+        protected bool initMailSlot(string slotname)
+        {
+
+            slotHandle = External.CreateFile(slotname,
+              (uint)FileAccess.Write,
+               (uint)FileShare.Read,
+               0,
+               (uint)FileMode.Open,
+               (uint)FileAttributes.Normal,
+               0);
+
+            return !slotHandle.IsInvalid;
+        }
+
         protected string CreateMessage(string stat, double sampleRate, string message, ulong timestamp)
         {
 
@@ -256,19 +269,6 @@ namespace Statsd
             return Send(message, 0, sampleRate, stats);
         }
 
-        protected bool initMailSlot(string slotname)
-        {
-            
-             slotHandle = External.CreateFile(slotname,
-               (uint)FileAccess.Write,
-                (uint)FileShare.Read,
-                0,
-                (uint)FileMode.Open,
-                (uint)FileAttributes.Normal,
-                0);
-
-            return !slotHandle.IsInvalid;
-        }
         protected bool Send(string message, ulong timestamp, double sampleRate, params string[] stats)
         {
             var retval = false; // didn't send anything
@@ -286,10 +286,7 @@ namespace Statsd
                     if (random.NextDouble() <= sampleRate)
                     {
                         var statFormatted = CreateMessage(stat, sampleRate, message, timestamp);
-                        if (DoSend(statFormatted))
-                        {
-                            retval = true;
-                        }
+                        retval = DoSend(statFormatted);
                     }
                 }
             }
@@ -298,10 +295,8 @@ namespace Statsd
                 foreach (var stat in stats)
                 {
                     var statFormatted = CreateMessage(stat, sampleRate, message, timestamp);
-                    if (DoSend(statFormatted))
-                    {
-                        retval = true;
-                    }
+                    retval = DoSend(statFormatted);
+
                 }
             }
 
@@ -318,20 +313,24 @@ namespace Statsd
 
         protected bool SendByMailSlot(string stat)
         {
-            using (FileStream fs = new FileStream(slotHandle.DangerousGetHandle(), FileAccess.Write, false, 400))
+
+            if (!slotHandle.IsClosed)
             {
-                System.Text.UnicodeEncoding encoding = new System.Text.UnicodeEncoding();
-                string data_string = String.Format("{0}:{1}:{2}", Process.GetCurrentProcess().Id, 3, stat);
-                byte[] data_bytes = encoding.GetBytes(data_string);
-                int byteCount = encoding.GetByteCount(data_string);
+                using (FileStream fs = new FileStream(slotHandle, FileAccess.Write))
+                {
 
-                fs.Write(data_bytes, 0, byteCount);
-                fs.Flush();
-                fs.Close();
+                    System.Text.UnicodeEncoding encoding = new System.Text.UnicodeEncoding();
+                    string data_string = String.Format("{0}:{1}:{2}", Process.GetCurrentProcess().Id, 3, stat);
+                    byte[] data_bytes = encoding.GetBytes(data_string);
+                    int byteCount = encoding.GetByteCount(data_string);
 
+                    fs.Write(data_bytes, 0, byteCount);
+                    fs.Flush();
+                    fs.Close();
+
+                }
             }
-            
-            
+
             return true;
         }
 
