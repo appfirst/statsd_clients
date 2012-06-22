@@ -15,6 +15,8 @@ namespace Statsd
 
             string bucketPrefix = "csharp.test.";
 
+
+            // These are examples of every function the API offers. 
             statsd.Gauge(bucketPrefix + "Gauge", 500);
             statsd.Gauge(bucketPrefix + "Gauge", 500, 2);
             statsd.GaugeWithMessage("GaugeWithMessage(string message, string key, int value)",bucketPrefix + "GaugeWithMessage", 500);
@@ -54,12 +56,20 @@ namespace Statsd
             statsd.IncrementWithMessage("IncrementWithMessage(string message, int magnitude, double sampleRate, params string[] keys)", 1, 2, bucketPrefix + "Inc1", bucketPrefix + "Inc2", bucketPrefix + "Inc3");
 
 
+
+
+
+
+
+            // These are some failing cases. 
+
             string bucketnameWith65Chars = bucketPrefix+"65CharacterBucketName";
 
             while (bucketnameWith65Chars.Length < 65)
                 bucketnameWith65Chars += "A";
 
             statsd.IncrementWithMessage("This bucket should not be accepted, because it is too long!", bucketnameWith65Chars);
+
 
 
 
@@ -83,6 +93,8 @@ namespace Statsd
             statsd.IncrementWithMessage("This bucket has unicode characters in its name.", bucketnameWithUnicodeSymbols);
 
             statsd.IncrementWithMessage("This bucket ends in a '.' ", bucketPrefix);
+
+            statsd.IncrementWithMessage("This bucket should be perfectly acceptable, but comes after some unacceptable names.", bucketPrefix + "acceptableName");
 
 
         }
