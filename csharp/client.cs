@@ -20,8 +20,8 @@ namespace Statsd
         private readonly UdpClient udpClient;
         private readonly Random random = new Random();
 
-        private SafeFileHandle slotHandle;
-
+        private SafeFileHandle slotHandle = null;
+        private FileStream fs = null;
 
         public StatsdPipe(string host, int port)
         {
@@ -109,7 +109,7 @@ namespace Statsd
             return Increment(magnitude, sampleRate, keys);
         }
 
-        // Decrement Functions
+        // DecrementWithMessage Functions
         public bool DecrementWithMessage(string message, string key)
         {
             return IncrementWithMessage(message, key, -1, 1.0);
@@ -286,6 +286,7 @@ namespace Statsd
                     if (random.NextDouble() <= sampleRate)
                     {
                         var statFormatted = CreateMessage(stat, sampleRate, message, timestamp);
+                        
                         retval = DoSend(statFormatted);
                     }
                 }
@@ -295,6 +296,7 @@ namespace Statsd
                 foreach (var stat in stats)
                 {
                     var statFormatted = CreateMessage(stat, sampleRate, message, timestamp);
+                    
                     retval = DoSend(statFormatted);
 
                 }
@@ -316,19 +318,16 @@ namespace Statsd
 
             if (!slotHandle.IsClosed)
             {
-                using (FileStream fs = new FileStream(slotHandle, FileAccess.Write))
-                {
+                if (fs == null)
+                    fs = new FileStream(slotHandle, FileAccess.Write);
 
-                    System.Text.UnicodeEncoding encoding = new System.Text.UnicodeEncoding();
-                    string data_string = String.Format("{0}:{1}:{2}", Process.GetCurrentProcess().Id, 3, stat);
-                    byte[] data_bytes = encoding.GetBytes(data_string);
-                    int byteCount = encoding.GetByteCount(data_string);
+                System.Text.UnicodeEncoding encoding = new System.Text.UnicodeEncoding();
+                string data_string = String.Format("{0}:{1}:{2}", Process.GetCurrentProcess().Id, 3, stat);
+                byte[] data_bytes = encoding.GetBytes(data_string);
+                int byteCount = encoding.GetByteCount(data_string);
 
-                    fs.Write(data_bytes, 0, byteCount);
-                    fs.Flush();
-                    fs.Close();
-
-                }
+                fs.Write(data_bytes, 0, byteCount);
+                fs.Flush();
             }
 
             return true;
@@ -373,7 +372,10 @@ namespace Statsd
                 {
                     slotHandle.Close();
                 }
-
+                if (fs != null)
+                {
+                    fs.Close();
+                }
 
             }
             catch
