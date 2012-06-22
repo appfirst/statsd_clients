@@ -61,7 +61,29 @@ namespace Statsd
 
 
 
-            // These are some failing cases. 
+            // These are some Special cases. 
+
+
+            statsd.IncrementWithMessage("This bucket starts as an increment...", bucketPrefix + "typechange");
+
+            statsd.TimingWithMessage("This bucket gets changed to a Timer", bucketPrefix + "typechange", 500);
+
+            string bucketnameWithSpace = bucketPrefix + "Spaced Name";
+
+            statsd.IncrementWithMessage("This bucket has a space it its name.", bucketnameWithSpace);
+
+
+
+            string bucketnameWithUnicodeSymbols = bucketPrefix + "Unicode√∭∑⍥汉字/漢字Name";
+
+            statsd.IncrementWithMessage("This bucket has unicode characters in its name.", bucketnameWithUnicodeSymbols);
+
+
+
+            statsd.IncrementWithMessage("This bucket ends in a '.' ", bucketPrefix);
+
+            
+
 
             string bucketnameWith65Chars = bucketPrefix+"65CharacterBucketName";
 
@@ -69,13 +91,6 @@ namespace Statsd
                 bucketnameWith65Chars += "A";
 
             statsd.IncrementWithMessage("This bucket should not be accepted, because it is too long!", bucketnameWith65Chars);
-
-
-
-
-            string bucketnameWithSpace = bucketPrefix + "Spaced Name";
-
-            statsd.IncrementWithMessage("This bucket has a space it its name.", bucketnameWithSpace);
 
 
             string bucketnameWithPipe = bucketPrefix + "Piped|Name";
@@ -87,15 +102,10 @@ namespace Statsd
 
             statsd.IncrementWithMessage("This bucket has a colon in its name.", bucketnameWithColon);
 
-
-            string bucketnameWithUnicodeSymbols = bucketPrefix + "Unicode√∭∑⍥汉字/漢字Name";
-
-            statsd.IncrementWithMessage("This bucket has unicode characters in its name.", bucketnameWithUnicodeSymbols);
-
-            statsd.IncrementWithMessage("This bucket ends in a '.' ", bucketPrefix);
-
             statsd.IncrementWithMessage("This bucket should be perfectly acceptable, but comes after some unacceptable names.", bucketPrefix + "acceptableName");
 
+
+           
 
         }
     }
