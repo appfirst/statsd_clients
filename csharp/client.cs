@@ -44,7 +44,7 @@ namespace Statsd
         //GaugeWithMessage Functions
         public bool GaugeWithMessage(string message, string key, int value)
         {
-            return Gauge(key, value, 1.0);
+            return GaugeWithMessage(message,key, value, 1.0);
         }
 
         public bool GaugeWithMessage(string message, string key, int value, double sampleRate)
@@ -354,7 +354,8 @@ namespace Statsd
 
         protected static  ulong DateTimeToUnixTimestamp(DateTime dateTime)
         {
-            return (ulong)(dateTime - new DateTime(1970, 1, 1).ToLocalTime()).TotalSeconds;
+	    DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            return (ulong)(DateTime.UtcNow - UnixEpoch).TotalSeconds;
         }
 
         #region IDisposable Members
