@@ -5,13 +5,13 @@ The AppFirst Statsd Transport
 """
 __all__=['AFTransport', 'Statsd', 'UDPTransport']
 
-import logging, os, client
+#import logging, os, client
 try:
     import ctypes
 except Exception as e:
     ctypes = None
 
-from client import *
+from client import UDPTransport
 STATSD_SEVERITY = 3
 
 class AFTransport(UDPTransport):
@@ -48,7 +48,7 @@ class AFTransport(UDPTransport):
             return False
         try:
             self.mqueue = self.shlib.mq_open(self.mqueue_name, self.flags)
-            if (self.mqueue < 0) :
+            if (self.mqueue < 0):
                 return False
         except Exception as e:
             return False

@@ -29,37 +29,50 @@
  */
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.nio.channels.DatagramChannel;
+import java.util.Date;
 import java.util.Random;
-
-import org.apache.log4j.Logger;
 
 public class StatsdClient {
 	private static Random RNG = new Random();
-	private static Logger log = Logger.getLogger(StatsdClient.class.getName());
-
-	private InetSocketAddress _address;
-	private DatagramChannel _channel;
-
-	public StatsdClient(String host, int port) throws UnknownHostException, IOException {
-		this(InetAddress.getByName(host), port);
+	
+	private Transport _transport;
+	
+	public StatsdClient() throws UnknownHostException, IOException{
+		_transport = new UDPTransport();
 	}
 
-	public StatsdClient(InetAddress host, int port) throws IOException {
-		_address = new InetSocketAddress(host, port);
-		_channel = DatagramChannel.open();
+	public StatsdClient(Transport transport){
+		_transport = transport;
 	}
+
+	public void setTransport(Transport transport){
+		_transport = transport;
+	}
+	
+	public boolean gauge(String key, int value) {
+		String stat = buildMessage(key, value, "g", new Date().getTime(), null);
+		return send(stat, 1);
+	}
+	
+	public boolean gauge(String key, int value, String message) {
+		String stat = buildMessage(key, value, "g", new Date().getTime(), message);
+		return send(stat, 1);
+	}
+
 
 	public boolean timing(String key, int value) {
 		return timing(key, value, 1.0);
 	}
 
 	public boolean timing(String key, int value, double sampleRate) {
-		return send(sampleRate, String.format("%s:%d|ms", key, value));
+		String stat = buildMessage(key, value, "ms", sampleRate, null);
+		return send(stat, sampleRate);
+	}
+
+	public boolean timing(String key, int value, double sampleRate, String message) {
+		String stat = buildMessage(key, value, "ms", sampleRate, message);
+		return send(stat, sampleRate);
 	}
 
 	public boolean decrement(String key) {
@@ -98,65 +111,55 @@ public class StatsdClient {
 	}
 
 	public boolean increment(String key, int magnitude, double sampleRate) {
-		String stat = String.format("%s:%s|c", key, magnitude);
-		return send(stat, sampleRate);
+		return update_stats(null, magnitude, sampleRate, key);
 	}
 
 	public boolean increment(int magnitude, double sampleRate, String... keys) {
-		String[] stats = new String[keys.length];
-		for (int i = 0; i < keys.length; i++) {
-			stats[i] = String.format("%s:%s|c", keys[i], magnitude);
+		return update_stats(null, magnitude, sampleRate, keys);
+	}
+
+	public boolean update_stats(String message, int magnitude, double sampleRate, String... buckets){
+		boolean result = true;
+		for (int i = 0; i < buckets.length; i++) {
+			String stat = buildMessage(buckets[i], magnitude, "c", sampleRate, message);
+			result = result && send(stat, sampleRate);
 		}
-		return send(sampleRate, stats);
+		return result;
+	}
+
+	private String buildMessage(String bucket, int magnitude, String type, double sampleRate, String message){
+		String field2 = "";
+		if (sampleRate < 1) {
+			field2 = String.format("@%f", sampleRate);
+		}
+		return buildMessage(bucket, magnitude, type, field2, message);
+	}
+
+	private String buildMessage(String bucket, int magnitude, String type, long timestamp, String message){
+		String field2 = String.valueOf(timestamp);
+		return buildMessage(bucket, magnitude, type, field2, message);
+	}
+	
+	private String buildMessage(String bucket, int magnitude, String type, String field2, String message){
+		// bucket: field0 | field1 | field2                 | field3
+		// bucket: value  | type   | sampele_rate/timestamp | message
+		String stat = String.format("%s:%d|%s",  bucket, magnitude, type);
+		// when message is there, we always keep field2 even if it's blank:
+		// bucket:2|c||some_message
+		if (message != null && !message.equals("")){
+			stat += String.format("|%s|%s", field2, message);
+		} else if (!field2.equals("")){
+			stat += String.format("|%s", field2);
+		}
+
+		return stat;
 	}
 
 	private boolean send(String stat, double sampleRate) {
-		return send(sampleRate, stat);
-	}
-
-	private boolean send(double sampleRate, String... stats) {
-
-		boolean retval = false; // didn't send anything
-		if (sampleRate < 1.0) {
-			for (String stat : stats) {
-				if (RNG.nextDouble() <= sampleRate) {
-					stat = String.format("%s|@%f", stat, sampleRate);
-					if (doSend(stat)) {
-						retval = true;
-					}
-				}
-			}
-		} else {
-			for (String stat : stats) {
-				if (doSend(stat)) {
-					retval = true;
-				}
-			}
-		}
-
-		return retval;
-	}
-
-	private boolean doSend(final String stat) {
-		try {
-			final byte[] data = stat.getBytes("utf-8");
-			final ByteBuffer buff = ByteBuffer.wrap(data);
-			final int nbSentBytes = _channel.send(buff, _address);
-
-			if (data.length == nbSentBytes) {
-				return true;
-			} else {
-				log.error(String.format(
-						"Could not send entirely stat %s to host %s:%d. Only sent %i bytes out of %i bytes", stat,
-						_address.getHostName(), _address.getPort(), nbSentBytes, data.length));
-				return false;
-			}
-
-		} catch (IOException e) {
-			log.error(
-					String.format("Could not send stat %s to host %s:%d", stat, _address.getHostName(),
-							_address.getPort()), e);
+		if (sampleRate < 1.0 && RNG.nextDouble() > sampleRate) 
 			return false;
+		else {
+			return this._transport.doSend(stat);
 		}
 	}
 }
