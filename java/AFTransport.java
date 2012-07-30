@@ -10,7 +10,7 @@ import com.sun.jna.Native;
 public class AFTransport extends UDPTransport implements Transport {
 	private static String AFCAPIName = "/afcollectorapi";
 	private static String LibName = "rt";
-	private static int OPEN_WRITEONLY = 01;
+	private static int O_WRONLY = 01;
 	private static int AFCMaxMsgSize = 2048;
 	private static int AFCSeverityStatsd = 3;
 
@@ -26,7 +26,7 @@ public class AFTransport extends UDPTransport implements Transport {
 		}
 
 		MQ mq = (MQ) Native.loadLibrary(LibName, MQ.class);
-		int mqd = mq.mq_open(AFCAPIName, OPEN_WRITEONLY);
+		int mqd = mq.mq_open(AFCAPIName, O_WRONLY);
 		int rv = mq.mq_send(mqd, stat, stat.length(), AFCSeverityStatsd);
 		mq.mq_close(mqd);
 

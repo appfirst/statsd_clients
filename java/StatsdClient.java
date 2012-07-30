@@ -162,4 +162,16 @@ public class StatsdClient {
 			return this._transport.doSend(stat);
 		}
 	}
+	
+	public static void main(String[] args){
+		try {
+			Transport transport = new AFTransport();
+			StatsdClient client = new StatsdClient(transport);
+			client.gauge("test", 123);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }
