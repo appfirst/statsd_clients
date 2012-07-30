@@ -14,6 +14,7 @@ statsd_port = 8125
 Sends statistics to the stats daemon over UDP
 Sends statistics to the appfirst collector over UDP
 '''
+import sys
 import time
 import random
 from socket import socket, AF_INET, SOCK_DGRAM
@@ -31,7 +32,7 @@ class UDPTransport(object):
             host = settings.statsd_host
             port = settings.statsd_port
             addr=(host, port)
-        except Error as e:
+        except Exception:
             exit(1)
 
         udp_sock = socket(AF_INET, SOCK_DGRAM)
@@ -41,7 +42,6 @@ class UDPTransport(object):
                 send_data = "%s:%s" % (stat, value)
                 udp_sock.sendto(send_data, addr)
         except:
-            import sys
             from pprint import pprint
             print "Unexpected error:", pprint(sys.exc_info())
             pass # we don't care

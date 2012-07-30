@@ -5,23 +5,22 @@ The AppFirst Statsd Transport
 """
 __all__=['AFTransport', 'Statsd', 'UDPTransport']
 
-#import logging, os, client
 try:
     import ctypes
 except Exception as e:
     ctypes = None
 
-from client import UDPTransport
+from client import UDPTransport, Statsd
 STATSD_SEVERITY = 3
 
 class AFTransport(UDPTransport):
-    def __init__(self, severity=STATSD_SEVERITY, useUDP=False):
+    def __init__(self, severity=STATSD_SEVERITY, useUDP=False, verbosity = False):
         self.mqueue_name = "/afcollectorapi"
         self.flags = 04001
         self.msgLen = 2048
         self.mqueue = None
         self.severity = severity
-        self.verbosity = False
+        self.verbosity = verbosity
         self.shlib = self.loadlib() if not useUDP else None
 
     def loadlib(self):
@@ -75,9 +74,9 @@ class AFTransport(UDPTransport):
                     print mlen, post
                 rc = self.shlib.mq_send(self.mqueue, post, len(post), self.severity)
                 if (rc < 0):
-                    self._handleError(record, "mq_send")
+                    self._handleError(post, "mq_send")
         except Exception as e:
-            self._handleError(record, "mq_send")
+            self._handleError(post, "mq_send")
 
     def close(self):
         if self.mqueue:
@@ -86,3 +85,7 @@ class AFTransport(UDPTransport):
             except Exception as e:
                 pass
             self.mqueue = None
+            
+if __name__ == "__main__":
+    Statsd.set_transport(AFTransport())
+    Statsd.increment("mqtest")
