@@ -1,21 +1,31 @@
-import java.io.IOException;
-import java.net.UnknownHostException;
+package com.appfirst;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 
-
-public class AFTransport extends UDPTransport implements Transport {
+public class AFTransport implements Transport {
 	private static String AFCAPIName = "/afcollectorapi";
 	private static String LibName = "rt";
 	private static int O_WRONLY = 01;
 	private static int AFCMaxMsgSize = 2048;
 	private static int AFCSeverityStatsd = 3;
 
-	public AFTransport() throws UnknownHostException, IOException{
-		super();
+	public AFTransport() {
+	}
+
+	private UDPTransport _udptransport = null;
+
+	public Transport getUDPTransport(){
+		if (_udptransport == null){
+			try {
+				_udptransport = new UDPTransport();
+			} catch (Exception e) {
+			}
+		}
+		return _udptransport;
 	}
 
 	@Override
@@ -33,7 +43,12 @@ public class AFTransport extends UDPTransport implements Transport {
 		if (AFCReturnCode.valueOf(rv) == AFCReturnCode.AFCSuccess) {
 			return true;
 		} else {
-			return super.doSend(stat);
+			Transport udp = this.getUDPTransport();
+			if (udp != null){
+				return udp.doSend(stat);
+			} else {
+				return false;
+			}
 		}
 	}
 
@@ -78,5 +93,17 @@ public class AFTransport extends UDPTransport implements Transport {
 			AFCReturnCode result = map.get(code);
 			return result==null ? AFCReturnCode.AFCSuccess : result;
 		}
+	}
+	
+	public static void main(String[] args){
+		Transport transport = new AFTransport();
+		StatsdClient client = new StatsdClient(transport);
+		client.gauge("gauge", 123);
+		client.increment(2, .5, "counter", "counter2");
+		client.increment("counter");
+		client.decrement(1, 0.99, "counter");
+		client.decrement(-2, "counter");
+		client.timing("timing", 500);
+		client.timing("timing", 488, 1.0, "hello");
 	}
 }

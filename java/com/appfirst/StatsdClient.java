@@ -1,3 +1,5 @@
+package com.appfirst;
+
 /**
  * StatsdClient.java
  *
@@ -35,9 +37,9 @@ import java.util.Random;
 
 public class StatsdClient {
 	private static Random RNG = new Random();
-	
+
 	private Transport _transport;
-	
+
 	public StatsdClient() throws UnknownHostException, IOException{
 		_transport = new UDPTransport();
 	}
@@ -49,25 +51,26 @@ public class StatsdClient {
 	public void setTransport(Transport transport){
 		_transport = transport;
 	}
-	
+
 	public boolean gauge(String key, int value) {
-		String stat = buildMessage(key, value, "g", new Date().getTime(), null);
-		return send(stat, 1);
+		return gauge(key, value, null);
 	}
-	
+
 	public boolean gauge(String key, int value, String message) {
 		String stat = buildMessage(key, value, "g", new Date().getTime(), message);
 		return send(stat, 1);
 	}
 
-
 	public boolean timing(String key, int value) {
-		return timing(key, value, 1.0);
+		return timing(key, value, 1.0, null);
+	}
+
+	public boolean timing(String key, int value, String message) {
+		return timing(key, value, 1.0, message);
 	}
 
 	public boolean timing(String key, int value, double sampleRate) {
-		String stat = buildMessage(key, value, "ms", sampleRate, null);
-		return send(stat, sampleRate);
+		return timing(key, value, sampleRate, null);
 	}
 
 	public boolean timing(String key, int value, double sampleRate, String message) {
@@ -75,26 +78,12 @@ public class StatsdClient {
 		return send(stat, sampleRate);
 	}
 
-	public boolean decrement(String key) {
-		return increment(key, -1, 1.0);
-	}
-
-	public boolean decrement(String key, int magnitude) {
-		return decrement(key, magnitude, 1.0);
-	}
-
-	public boolean decrement(String key, int magnitude, double sampleRate) {
-		magnitude = magnitude < 0 ? magnitude : -magnitude;
-		return increment(key, magnitude, sampleRate);
-	}
-
 	public boolean decrement(String... keys) {
 		return increment(-1, 1.0, keys);
 	}
 
 	public boolean decrement(int magnitude, String... keys) {
-		magnitude = magnitude < 0 ? magnitude : -magnitude;
-		return increment(magnitude, 1.0, keys);
+		return decrement(magnitude, 1.0, keys);
 	}
 
 	public boolean decrement(int magnitude, double sampleRate, String... keys) {
@@ -102,16 +91,12 @@ public class StatsdClient {
 		return increment(magnitude, sampleRate, keys);
 	}
 
-	public boolean increment(String key) {
-		return increment(key, 1, 1.0);
+	public boolean increment(String... keys) {
+		return increment(1, 1.0, keys);
 	}
 
-	public boolean increment(String key, int magnitude) {
-		return increment(key, magnitude, 1.0);
-	}
-
-	public boolean increment(String key, int magnitude, double sampleRate) {
-		return update_stats(null, magnitude, sampleRate, key);
+	public boolean increment(int magnitude, String... keys) {
+		return increment(magnitude, 1.0, keys);
 	}
 
 	public boolean increment(int magnitude, double sampleRate, String... keys) {
@@ -139,7 +124,7 @@ public class StatsdClient {
 		String field2 = String.valueOf(timestamp);
 		return buildMessage(bucket, magnitude, type, field2, message);
 	}
-	
+
 	private String buildMessage(String bucket, int magnitude, String type, String field2, String message){
 		// bucket: field0 | field1 | field2                 | field3
 		// bucket: value  | type   | sampele_rate/timestamp | message
@@ -160,18 +145,6 @@ public class StatsdClient {
 			return false;
 		else {
 			return this._transport.doSend(stat);
-		}
-	}
-	
-	public static void main(String[] args){
-		try {
-			Transport transport = new AFTransport();
-			StatsdClient client = new StatsdClient(transport);
-			client.gauge("test", 123);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 	}
 }
