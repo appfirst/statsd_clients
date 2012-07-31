@@ -1,5 +1,5 @@
 import unittest
-from mock import Mock, MagicMock
+from mock import MagicMock
 from client import Statsd, UDPTransport
 from afclient import AFTransport
 
