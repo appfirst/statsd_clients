@@ -5,24 +5,26 @@ The AppFirst Statsd Transport
 """
 __all__=['AFTransport', 'Statsd', 'UDPTransport']
 
-import logging, os, client
 try:
     import ctypes
-except Exception as e:
+except Exception, e:
     ctypes = None
 
-from client import *
+from client import UDPTransport, Statsd
 STATSD_SEVERITY = 3
 
 class AFTransport(UDPTransport):
-    def __init__(self, severity=STATSD_SEVERITY, useUDP=False):
+    def __init__(self, severity=STATSD_SEVERITY, useUDP=False, verbosity = False):
         self.mqueue_name = "/afcollectorapi"
         self.flags = 04001
         self.msgLen = 2048
         self.mqueue = None
         self.severity = severity
-        self.verbosity = False
-        self.shlib = self.loadlib() if not useUDP else None
+        self.verbosity = verbosity
+        if not useUDP:
+            self.shlib = self.loadlib()
+        else:
+            self.shlib = None
 
     def loadlib(self):
         if ctypes:
@@ -48,9 +50,9 @@ class AFTransport(UDPTransport):
             return False
         try:
             self.mqueue = self.shlib.mq_open(self.mqueue_name, self.flags)
-            if (self.mqueue < 0) :
+            if (self.mqueue < 0):
                 return False
-        except Exception as e:
+        except Exception, e:
             return False
         return True
 
@@ -75,14 +77,18 @@ class AFTransport(UDPTransport):
                     print mlen, post
                 rc = self.shlib.mq_send(self.mqueue, post, len(post), self.severity)
                 if (rc < 0):
-                    self._handleError(record, "mq_send")
-        except Exception as e:
-            self._handleError(record, "mq_send")
+                    self._handleError(post, "mq_send")
+        except Exception, e:
+            self._handleError(post, "mq_send")
 
     def close(self):
         if self.mqueue:
             try:
-                rc = self.shlib.mq_close(self.mqueue)
-            except Exception as e:
+                _ = self.shlib.mq_close(self.mqueue)
+            except Exception, e:
                 pass
             self.mqueue = None
+
+if __name__ == "__main__":
+    Statsd.set_transport(AFTransport())
+    Statsd.increment("mqtest")

@@ -1,7 +1,17 @@
-﻿using System;
+
+using System;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.IO;
+using Microsoft.Win32.SafeHandles;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Diagnostics;
+using System.Collections.Generic;
+
+using MailSlotClient;
+
 
 namespace Statsd
 {
@@ -9,6 +19,9 @@ namespace Statsd
     {
         private readonly UdpClient udpClient;
         private readonly Random random = new Random();
+
+        private SafeFileHandle slotHandle = null;
+        private FileStream fs = null;
 
         public StatsdPipe(string host, int port)
         {
@@ -24,19 +37,19 @@ namespace Statsd
 
         public bool Gauge(string key, int value, double sampleRate)
         {
-            return GaugeWithMessage(null, key, value, sampleRate);
+            return GaugeWithMessage(null,  key, value, sampleRate);
         }
 
 
         //GaugeWithMessage Functions
         public bool GaugeWithMessage(string message, string key, int value)
         {
-            return Gauge(key, value, 1.0);
+            return GaugeWithMessage(message,key, value, 1.0);
         }
 
         public bool GaugeWithMessage(string message, string key, int value, double sampleRate)
         {
-            return Send(message, sampleRate, String.Format("{0}:{1:d}|g", key, value));
+            return Send(message, DateTimeToUnixTimestamp(DateTime.UtcNow), sampleRate, String.Format("{0}:{1:d}|g", key, value));
         }
 
 
@@ -96,7 +109,7 @@ namespace Statsd
             return Increment(magnitude, sampleRate, keys);
         }
 
-        // Decrement Functions
+        // DecrementWithMessage Functions
         public bool DecrementWithMessage(string message, string key)
         {
             return IncrementWithMessage(message, key, -1, 1.0);
@@ -186,10 +199,6 @@ namespace Statsd
 
         public bool IncrementWithMessage(string message, int magnitude, params string[] keys)
         {
-            //Made a change here to original logic!! 
-            //Original: magnitude = magnitude < 0 ? magnitude : -magnitude;
-            //This made the magintude always negative when this function was called
-
             magnitude = magnitude < 0 ? -magnitude : magnitude;
             return IncrementWithMessage(message, magnitude, 1.0, keys);
         }
@@ -200,34 +209,52 @@ namespace Statsd
         }
 
 
-
-        protected string CreateMessage(string stat,double sampleRate, string message, decimal timestamp)
+        protected bool initMailSlot(string slotname)
         {
+
+            slotHandle = External.CreateFile(slotname,
+              (uint)FileAccess.Write,
+               (uint)FileShare.Read,
+               0,
+               (uint)FileMode.Open,
+               (uint)FileAttributes.Normal,
+               0);
+
+            return !slotHandle.IsInvalid;
+        }
+
+        protected string CreateMessage(string stat, double sampleRate, string message, ulong timestamp)
+        {
+
             //bucket: field0 | field1 | field2                  | field3
             //bucket: value  | unit   | sampele_rate/timestamp  | message
 
             string messageString = stat;
             string field2 = "";
+            bool usingCollector = !slotHandle.IsInvalid;
 
 
             if (sampleRate < 1.0)
             {
                 field2 = String.Format("@{0:f}", sampleRate);
             }
-            else if (timestamp != 0)
+            else if (timestamp != 0 &&  usingCollector )
             {
                 field2 = String.Format("{0}", timestamp);
             }
 
-
-            if (message != null)
+            if (usingCollector)
             {
-                messageString += String.Format("|{0}|{1}", field2, message);
+                if (message != null)
+                {
+                    messageString += String.Format("|{0}|{1}", field2, message);
+                }
+                else if (field2 != "")
+                {
+                    messageString += String.Format("|{0}", field2);
+                }
             }
-            else if (field2 != "")
-            {
-                messageString += String.Format("|{0}", field2);
-            }
+  
 
             return messageString;
         }
@@ -242,9 +269,14 @@ namespace Statsd
             return Send(message, 0, sampleRate, stats);
         }
 
-        protected bool Send(string message, decimal timestamp, double sampleRate, params string[] stats)
+        protected bool Send(string message, ulong timestamp, double sampleRate, params string[] stats)
         {
             var retval = false; // didn't send anything
+            
+            // Try to open up MailSlot. 
+            string slotname = @"\\.\mailslot\afcollectorapi";
+            
+            initMailSlot(slotname);
 
 
             if (sampleRate < 1.0)
@@ -253,11 +285,9 @@ namespace Statsd
                 {
                     if (random.NextDouble() <= sampleRate)
                     {
-                        var statFormatted = CreateMessage(stat,sampleRate,message,timestamp);
-                        if (DoSend(statFormatted))
-                        {
-                            retval = true;
-                        }
+                        var statFormatted = CreateMessage(stat, sampleRate, message, timestamp);
+                        
+                        retval = DoSend(statFormatted);
                     }
                 }
             }
@@ -266,21 +296,66 @@ namespace Statsd
                 foreach (var stat in stats)
                 {
                     var statFormatted = CreateMessage(stat, sampleRate, message, timestamp);
-                    if (DoSend(statFormatted))
-                    {
-                        retval = true;
-                    }
+                    
+                    retval = DoSend(statFormatted);
+
                 }
             }
 
             return retval;
         }
-        protected bool DoSend(string stat)
+
+        protected bool SendByUDP(string stat)
         {
             var data = Encoding.Default.GetBytes(stat + "\n");
 
             udpClient.Send(data, data.Length);
             return true;
+        }
+
+        protected bool SendByMailSlot(string stat)
+        {
+
+            if (!slotHandle.IsClosed)
+            {
+                if (fs == null)
+                    fs = new FileStream(slotHandle, FileAccess.Write);
+
+                System.Text.UnicodeEncoding encoding = new System.Text.UnicodeEncoding();
+                string data_string = String.Format("{0}:{1}:{2}", Process.GetCurrentProcess().Id, 3, stat);
+                byte[] data_bytes = encoding.GetBytes(data_string);
+                int byteCount = encoding.GetByteCount(data_string);
+
+                fs.Write(data_bytes, 0, byteCount);
+                fs.Flush();
+            }
+
+            return true;
+        }
+
+        protected bool DoSend(string stat)
+        {
+            bool usingCollector = !slotHandle.IsInvalid;
+
+            bool retval = false;
+
+            if (usingCollector)
+            {
+                retval = SendByMailSlot(stat);
+            }
+            else
+            {
+                retval = SendByUDP(stat);
+            }
+            return retval;
+
+        }
+
+
+        protected static  ulong DateTimeToUnixTimestamp(DateTime dateTime)
+        {
+	    DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            return (ulong)(DateTime.UtcNow - UnixEpoch).TotalSeconds;
         }
 
         #region IDisposable Members
@@ -292,7 +367,17 @@ namespace Statsd
                 if (udpClient != null)
                 {
                     udpClient.Close();
+                    
                 }
+                if (!slotHandle.IsInvalid)
+                {
+                    slotHandle.Close();
+                }
+                if (fs != null)
+                {
+                    fs.Close();
+                }
+
             }
             catch
             {
