@@ -77,7 +77,9 @@ class AFTransport(UDPTransport):
                     print mlen, post
                 rc = self.shlib.mq_send(self.mqueue, post, len(post), self.severity)
                 if (rc < 0):
-                    self._handleError(post, "mq_send")
+                    if self.verbosity:
+                        print "Failed to mq_send, Using UDP Transport"
+                    UDPTransport.emit(self, data)
         except Exception, e:
             self._handleError(post, "mq_send")
 
