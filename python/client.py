@@ -57,6 +57,7 @@ class Statsd(object):
 
     @staticmethod
     def set_transport(transport):
+        Statsd._transport.close()
         Statsd._transport = transport
 
     @staticmethod
