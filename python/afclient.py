@@ -22,11 +22,11 @@ class AFTransport(UDPTransport):
         self.severity = severity
         self.verbosity = verbosity
         if not useUDP:
-            self.shlib = self.loadlib()
+            self.shlib = self._loadlib()
         else:
             self.shlib = None
 
-    def loadlib(self):
+    def _loadlib(self):
         if ctypes:
             try:
                 ctypes.cdll.LoadLibrary("librt.so.1")
