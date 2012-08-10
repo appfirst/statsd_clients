@@ -63,24 +63,24 @@ class Statsd(object):
     @staticmethod
     def gauge(bucket, reading, message=None):
         """
-        Log timing information
-        >>> from python_example import Statsd
-        >>> Statsd.timing('some.time', 500)
+        Log gauge information
+        >>> from client import Statsd
+        >>> Statsd.gauge('some.gauge', 500)
         """
         stats = {}
         stats[bucket] = "%d|g" % reading
         Statsd.send(stats, message=message, timestamp=int(time.time()))
 
     @staticmethod
-    def timing(bucket, elapse, sample_rate=1, message=None):
+    def timing(bucket, elapse, message=None):
         """
         Log timing information
-        >>> from python_example import Statsd
+        >>> from client import Statsd
         >>> Statsd.timing('some.time', 500)
         """
         stats = {}
         stats[bucket] = "%d|ms" % elapse
-        Statsd.send(stats, sample_rate, message)
+        Statsd.send(stats, message=message)
 
     @staticmethod
     def increment(buckets, sample_rate=1, message=None):
@@ -147,6 +147,43 @@ class Statsd(object):
     @staticmethod
     def shutdown():
         Statsd._transport.close()
+
+    @staticmethod
+    def time(bucket):
+        """
+        Convenient wrapper.
+        This will count how many this wrapped function is invoked.
+
+        >>>@Statsd.time("some.timer.bucket")
+        >>>def some_func():
+        >>>    pass #do something
+        """
+        def wrap_timer(method):
+            def send_statsd(*args, **kwargs):
+                start = time.time()
+                result = method(*args, **kwargs)
+                Statsd.timing(bucket, int(time.time()-start))
+                return result
+            return send_statsd
+        return wrap_timer
+
+    @staticmethod
+    def count(buckets, sample_rate=1):
+        """
+        Convenient wrapper.
+        This will count how many this wrapped function is invoked.
+
+        @Statsd.count("some.counter.bucket")
+        def some_func():
+            pass #do something
+        """
+        def wrap_counter(method):
+            def send_statsd(*args, **kwargs):
+                result = method(*args, **kwargs)
+                Statsd.increment(buckets, sample_rate)
+                return result
+            return send_statsd
+        return wrap_counter
 
 #Let's try and shutdown automatically on application exit...
 try:
