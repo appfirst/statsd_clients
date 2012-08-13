@@ -12,6 +12,7 @@ import signal
 import time
 
 MQ_DESCRIPTOR = "/afcollectorapi"
+STATSD_SEVERITY = 3
 mqueue = None
 
 def receive_msg():
@@ -21,9 +22,10 @@ def receive_msg():
         mqueue.request_notification()
         signal.signal(signal.SIGUSR1, receive_msg)
     while True:
-        msg, _ = mqueue.receive()
+        msg, prio = mqueue.receive()
         if msg:
-            print msg
+            if prio == STATSD_SEVERITY:
+                print msg
         else:
             mqueue.request_notification(signal.SIGUSR1)
             break
@@ -38,4 +40,5 @@ if __name__ == "__main__":
     except (KeyboardInterrupt, SystemExit):
         exit(0)
     finally:
-        mqueue.close()
+        if mqueue:
+            mqueue.close()

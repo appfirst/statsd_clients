@@ -26,7 +26,8 @@ Now we have an even simpler way if you just want to **count** the invocation or 
 
 	from client import Statsd
 
-	@Statsd.timing("some.timer.bucket")
+	@Statsd.time("some.counter.bucket")
+	@Statsd.time("some.timer.bucket")
 	def some_func():
 	    pass #do something
 
@@ -38,7 +39,7 @@ To use it with AppFirst Collector, you will need the `AFTransport` from `afclien
 
 ###AppFirst Extension:
 
-By default, Statsd client uses UDP [Transport](#about-transport) to sent messages. To use with AppFirst Collector (please [install the collector][collector] before you do), switch to the AppFirst [Transport](#about-transport) before usage **FOR ONE TIME ONLY**:
+By default, Statsd client in client.py uses UDP [Transport](#about-transport) to sent messages. To use with AppFirst Collector (please [install the collector][collector] before you do), switch to the AppFirst [Transport](#about-transport) before usage **FOR ONE TIME ONLY** or simply import it from afclient.py (Statsd client use AFTransport by default in this module):
 	
 	from client import Statsd
 	from afclient import AFTransport
@@ -174,19 +175,28 @@ Again, you can also define message (with **[AppFirst Extended Format](#appfirst-
 
 ## About Transport
 -------------------
-In order to switch between different ways of sending statsd message, we have the concept Transport. Currently we have `UDPTransport` by default and `AFTransport` in afclient if you want to communicate with [AppFirst Collector][collector].
+In order to switch between different ways of sending statsd message, we have the concept Transport. Currently we have `UDPTransport` by default in client.py and `AFTransport` by default in afclient if you want to communicate with [AppFirst Collector][collector].
 
 To switch transport, create an instance of that transport and pass in Statsd module using `set_transport`. This should be done only once, means you don't have to pass in a new transport every time you send message). Once you set a different transport, the former one will be **close()**. When never the process exit, the transport will also be closed.
 
-	from afclient import Statsd, AFTransport, StatsdWrapper
+	from client import Statsd
+	from afclient import AFTransport
 
     transport = AFTransport()
 	Statsd.set_transport(transport)
 	
 	@Statsd.count("bucket.name")
-	@Statsd.time("other.bucket.name")
 	def some_func()
 	    #do something
+
+This is equivalent to:
+
+    from afclient import Statsd
+
+    @Statsd.count("bucket.name")
+    def some_func()
+        #do something
+
 
 To implement your own transport, there is only two method you need to implement:
 

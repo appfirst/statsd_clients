@@ -94,6 +94,7 @@ class AFTransport(UDPTransport):
     def __del__(self):
         self.close()
 
+Statsd.set_transport(AFTransport())
+
 if __name__ == "__main__":
-    Statsd.set_transport(AFTransport())
     Statsd.increment("mqtest")

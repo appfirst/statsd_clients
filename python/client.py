@@ -162,7 +162,8 @@ class Statsd(object):
             def send_statsd(*args, **kwargs):
                 start = time.time()
                 result = method(*args, **kwargs)
-                Statsd.timing(bucket, int(time.time()-start))
+                duration = (time.time() - start) * 1000
+                Statsd.timing(bucket, duration)
                 return result
             return send_statsd
         return wrap_timer
