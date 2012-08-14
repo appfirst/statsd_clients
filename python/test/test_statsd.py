@@ -2,6 +2,9 @@
 Created on Jul 30, 2012
 
 @author: Yangming
+
+
+Intercept statsd messages sent through AFTransport. Note this will scramble the message queue 
 '''
 try:
     import posix_ipc
