@@ -48,16 +48,17 @@ class AFTransport(UDPTransport):
     def _createQueue(self):
         if not self.shlib:
             import sys
-            if sys.version_info < (2, 4):
-                raise MQNotAvailableError("Must use python 2.4 or greater to support ctypes")
+            if sys.version_info < (2, 5):
+                raise MQError("Statsd Error: require python 2.5 or greater but using %s.%s" %
+                              (sys.version_info[0], sys.version_info[1]))
             else:
-                raise MQNotAvailableError("Can't loading native library that supports Posix MQ")
+                raise MQError("Statsd Error: native support for AFTransport is not available")
         try:
             self.mqueue = self.shlib.mq_open(self.mqueue_name, self.flags)
             if (self.mqueue < 0):
-                raise MQNotAvailableError("AFCollector not installed")
+                raise MQError("Statsd Error: AFCollector not installed")
         except Exception, e:
-            raise MQNotAvailableError("Unknown error occur when open Posix MQ")
+            raise MQError("Statsd Error: unknown error occur when open mqueue")
 
     def emit(self, data):
         try:
@@ -65,9 +66,9 @@ class AFTransport(UDPTransport):
                 self._createQueue()
             if self.mqueue:
                 self._emit(data)
-        except MQNotAvailableError, e:
+        except MQError, e:
+            print e.msg
             if self.verbosity:
-                print e.msg
                 print "Trying to use UDP Transport."
             UDPTransport.emit(self, data)
         except Exception, e:
@@ -83,7 +84,7 @@ class AFTransport(UDPTransport):
                 print mlen, post
             rc = self.shlib.mq_send(self.mqueue, post, len(post), self.severity)
             if (rc < 0):
-                raise MQNotAvailableError("Failed to mq_send")
+                raise MQError("Statsd Error: failed to mq_send")
 
     def close(self):
         if self.mqueue:
@@ -96,9 +97,9 @@ class AFTransport(UDPTransport):
     def __del__(self):
         self.close()
 
-class MQNotAvailableError(Exception):
+class MQError(Exception):
     def __init__(self, msg=None):
-        self.msg = msg or "failed to check status. check arguments and try again."
+        self.msg = msg or "Statsd Error"
 
     def __str__(self):
         return str(self.msg)
@@ -106,5 +107,5 @@ class MQNotAvailableError(Exception):
 Statsd.set_transport(AFTransport())
 
 if __name__ == "__main__":
-    Statsd.set_transport(AFTransport(verbosity=True))
+    #Statsd.set_transport(AFTransport(verbosity=True))
     Statsd.increment("mqtest")
