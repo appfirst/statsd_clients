@@ -99,11 +99,11 @@ public class AFTransport implements Transport {
 		Transport transport = new AFTransport();
 		StatsdClient client = new StatsdClient(transport);
 		client.gauge("gauge", 123);
-		client.increment(2, .5, "counter", "counter2");
 		client.increment("counter");
-		client.decrement(1, 0.99, "counter");
-		client.decrement(-2, "counter");
+		client.decrement("counter");
+		client.updateStats(2, null, .5, "counter", "counter2");
+		client.updateStats(-1, null, 1, "counter");
 		client.timing("timing", 500);
-		client.timing("timing", 488, 1.0, "hello");
+		client.timing("timing", 488, "hello");
 	}
 }

@@ -62,48 +62,31 @@ public class StatsdClient {
 	}
 
 	public boolean timing(String key, int value) {
-		return timing(key, value, 1.0, null);
+		return timing(key, value, null);
 	}
 
 	public boolean timing(String key, int value, String message) {
-		return timing(key, value, 1.0, message);
-	}
-
-	public boolean timing(String key, int value, double sampleRate) {
-		return timing(key, value, sampleRate, null);
-	}
-
-	public boolean timing(String key, int value, double sampleRate, String message) {
-		String stat = buildMessage(key, value, "ms", sampleRate, message);
-		return send(stat, sampleRate);
+		String stat = buildMessage(key, value, "ms", 1, message);
+		return send(stat, 1);
 	}
 
 	public boolean decrement(String... keys) {
-		return increment(-1, 1.0, keys);
-	}
-
-	public boolean decrement(int magnitude, String... keys) {
-		return decrement(magnitude, 1.0, keys);
-	}
-
-	public boolean decrement(int magnitude, double sampleRate, String... keys) {
-		magnitude = magnitude < 0 ? magnitude : -magnitude;
-		return increment(magnitude, sampleRate, keys);
+		return updateStats(-1, null, 1, keys);
 	}
 
 	public boolean increment(String... keys) {
-		return increment(1, 1.0, keys);
+		return updateStats(-1, null, 1, keys);
 	}
 
-	public boolean increment(int magnitude, String... keys) {
-		return increment(magnitude, 1.0, keys);
+	public boolean updateStats(int magnitude, String... buckets){
+		return updateStats(magnitude, null, 1, buckets);
+	}
+	
+	public boolean updateStats(int magnitude, double sampleRate, String... buckets){
+		return updateStats(magnitude, null, sampleRate, buckets);
 	}
 
-	public boolean increment(int magnitude, double sampleRate, String... keys) {
-		return update_stats(null, magnitude, sampleRate, keys);
-	}
-
-	public boolean update_stats(String message, int magnitude, double sampleRate, String... buckets){
+	public boolean updateStats(int magnitude, String message, double sampleRate, String... buckets){
 		boolean result = true;
 		for (int i = 0; i < buckets.length; i++) {
 			String stat = buildMessage(buckets[i], magnitude, "c", sampleRate, message);
