@@ -1,0 +1,55 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.appfirst</groupId>
+  <artifactId>java_statsd_client</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source/>
+          <target/>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <properties>
+  	<jna.version>3.4.0</jna.version>
+  </properties>
+  <dependencies>
+  	<dependency>
+  		<groupId>net.java.dev.jna</groupId>
+  		<artifactId>jna</artifactId>
+  		<version>3.4.0</version>
+  		<scope>system</scope>
+  		<systemPath>${project.basedir}/lib/jna-3.4.0.jar</systemPath>
+  	</dependency>
+  	<dependency>
+  		<groupId>net.java.dev.jna</groupId>
+  		<artifactId>platform</artifactId>
+  		<version>3.4.0</version>
+  		<scope>system</scope>
+  		<systemPath>${project.basedir}/lib/platform-3.4.0.jar</systemPath>
+  	</dependency>
+  	<dependency>
+  		<groupId>log4j</groupId>
+  		<artifactId>log4j</artifactId>
+  		<version>1.2.17</version>
+  		<scope>system</scope>
+  		<systemPath>${project.basedir}/lib/log4j-1.2.17.jar</systemPath>
+  	</dependency>
+  </dependencies>
+  <url>http://github.com/appfirst/java_statsd_client</url>
+  <name>java_statsd_client</name>
+  <description>Statsd Java Clients by AppFirst.
+
+This library provides ability to send StatsD message through UDP to standard StatsD Server or through Posix Message Queue to AppFirst Collector.</description>
+  <scm>
+  	<url>http://github.com/appfirst/java_statsd_client</url>
+  	<connection>scm:git:git://github.com/appfirst/java-statsd-client.git</connection>
+  	<developerConnection>scm:ssh:git@github.com:appfirst/java-statsd-client.git</developerConnection>
+  </scm>
+</project>
