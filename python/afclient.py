@@ -107,5 +107,5 @@ class MQError(Exception):
 Statsd.set_transport(AFTransport())
 
 if __name__ == "__main__":
-    #Statsd.set_transport(AFTransport(verbosity=True))
+    Statsd.set_transport(AFTransport(verbosity=True))
     Statsd.increment("mqtest")
