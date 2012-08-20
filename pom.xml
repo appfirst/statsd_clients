@@ -14,32 +14,42 @@
           <target/>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.6.1</version>
+        <configuration>
+          <stylesheetfile>${project.basedir}/doc/xref/stylesheet.css</stylesheetfile>
+          <javadocDirectory>${project.basedir}/doc/xref</javadocDirectory>
+          <docfilessubdirs>true</docfilessubdirs>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <properties>
   	<jna.version>3.4.0</jna.version>
+  	<log4j.version>1.2.17</log4j.version>
   </properties>
   <dependencies>
   	<dependency>
   		<groupId>net.java.dev.jna</groupId>
   		<artifactId>jna</artifactId>
-  		<version>3.4.0</version>
+  		<version>${jna.version}</version>
   		<scope>system</scope>
-  		<systemPath>${project.basedir}/lib/jna-3.4.0.jar</systemPath>
+  		<systemPath>${project.basedir}/lib/jna-${jna.version}.jar</systemPath>
   	</dependency>
   	<dependency>
   		<groupId>net.java.dev.jna</groupId>
   		<artifactId>platform</artifactId>
-  		<version>3.4.0</version>
+  		<version>${jna.version}</version>
   		<scope>system</scope>
-  		<systemPath>${project.basedir}/lib/platform-3.4.0.jar</systemPath>
+  		<systemPath>${project.basedir}/lib/platform-${jna.version}.jar</systemPath>
   	</dependency>
   	<dependency>
   		<groupId>log4j</groupId>
   		<artifactId>log4j</artifactId>
-  		<version>1.2.17</version>
+  		<version>${log4j.version}</version>
   		<scope>system</scope>
-  		<systemPath>${project.basedir}/lib/log4j-1.2.17.jar</systemPath>
+  		<systemPath>${project.basedir}/lib/log4j-${log4j.version}.jar</systemPath>
   	</dependency>
   </dependencies>
   <url>http://github.com/appfirst/java_statsd_client</url>
@@ -52,4 +62,8 @@ This library provides ability to send StatsD message through UDP to standard Sta
   	<connection>scm:git:git://github.com/appfirst/java-statsd-client.git</connection>
   	<developerConnection>scm:ssh:git@github.com:appfirst/java-statsd-client.git</developerConnection>
   </scm>
+  <organization>
+  	<name>AppFirst Inc.</name>
+  	<url>http://www.appfirst.com</url>
+  </organization>
 </project>

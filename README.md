@@ -6,14 +6,16 @@ For Statsd, here's a definition I like from [Native StatsD integration with Gaug
 
 > StatsD is a simple network daemon that continuously receives metrics pushed over UDP and periodically sends aggregate metrics to upstream services like Graphite and Librato Metrics. Because it uses UDP, clients (for example, web applications) can ship metrics to it very fast with little to no overhead. This means that a user can capture multiple metrics for every request to a web application, even at a rate of thousands of requests per second. Request-level metrics are aggregated over a flush interval (default 10 seconds) and pushed to an upstream metrics service.
 
-There are currently 3 types of stats: [Counting](#couting), [Timing](#timing) and [Gauge](#gauge).) Etsy has defined the [concepts](https://github.com/etsy/statsd#concepts). 
+There are currently 3 types of stats: [Counting](#couting), [Timing](#timing) and [Gauge](#gauge). Etsy has defined the [concepts](https://github.com/etsy/statsd#concepts). 
+
+For API specification please see the documentation under `src/main/javadoc`
 
 ## Use Statsd Client
 -------------------
 
 To use Statsd client, it's ridiculously easy and straightforward:
 
-	StatsdClient client = new StatsdClient();
+	StatsdClient client = new AFClient();
 	client.increment("some_bucket");
 	
 By doing this, you sent a message look like this:
@@ -22,24 +24,19 @@ By doing this, you sent a message look like this:
 	
 That's it! Use it anywhere in your code to get statistical data over time, the server will do everything for you. Currently there are several implementation available in the wild, such as the original [etsy/statsd](https://github.com/etsy/statsd) implementation and [AppFirst Collector][collector]'s seamless integration. Here is [a list of them](http://joemiller.me/2011/09/21/list-of-statsd-server-implementations/).
 
-There are totally three modules for python client. The main functionality are all included in `client.py`.  
-To use statsd client with UDP, you also have to setup `local_settings.py` if your server is not on localhost or not using default port.  
-To use it with AppFirst Collector, you will need the `AFTransport` from `afclient.py`, please see below.
 
 ###AppFirst Extension:
 
-By default, Statsd client in client.py uses UDP [Transport](#about-transport) to sent messages. To use with AppFirst Collector (please [install the collector][collector] before you do), switch to the AppFirst [Transport](#about-transport) before usage **FOR ONE TIME ONLY** or simply import it from afclient.py (Statsd client use `AFTransport` by default in this module):
+There are currently two implementation of Statsd client, [UDPClient and AFClient](#about-transport) to sent messages. So it's self-explanatory: to send through UDP, use UDPClient, to send through with AppFirst Collector (please [install the collector][collector] before you do), use AFClient. Here is a complete example:
 
 	import com.appfirst.statsd.StatsdClient;	
-	import com.appfirst.statsd.AFTransport;
+	import com.appfirst.statsd.AFClient;
 	
 	public class SomeClass{
 
 		public static void main(){
 
-			Transport transport = new AFTransport();
-			StatsdClient client = new StatsdClient(transport);
-
+			StatsdClient client = new AFClient();
 			client.increment("bucket");
 		}
 	}
@@ -70,7 +67,7 @@ To increment one or more stats counters, message is available with **[AppFirst E
 	    	
 Here's an example (the second example are using [sample rate](#sample-rate)):
 
-	StatsdClient client = new StatsdClient(new AFTransport());
+	StatsdClient client = new AFClient();
 	client.increment("some.int", "some.int2");
 	
 'c' is the unit for counter. This will send messages:
@@ -82,7 +79,7 @@ Here's an example (the second example are using [sample rate](#sample-rate)):
 
 To decrement one or more stats counters.
 
-	StatsdClient client = new StatsdClient(new AFTransport());
+	StatsdClient client = new AFClient();
 	client.decrement("some.int");
 	
 And this will send message:
@@ -93,7 +90,7 @@ And this will send message:
 
 To updates one or more stats counters by arbitrary amounts:
 
-	StatsdClient client = new StatsdClient(new AFTransport());
+	StatsdClient client = new AFClient();
 	client.updateStats(5, "some.int");
 	client.updateStats(2, 0.5, "some.int");
 	client.updateStats(3, "act1", 1.0, "some.int")
@@ -122,7 +119,7 @@ Note this is a **counter** only feature, `sampleRate` for **timer** and **gauge*
 Log timing information, in another word, measuring the elapsed time for a certain action.
 Optionally, you can also define message (with **[AppFirst Extended Format](#appfirst-extension)** only).
 
-	StatsdClient client = new StatsdClient(new AFTransport());
+	StatsdClient client = new AFClient();
 	client.timing("some.time", 500);
 	client.timing("some.time", 300, "message");
 
@@ -137,7 +134,7 @@ UOM for timing is always 'ms' (milli-second). A message like this is sent:
 
 Log gauge information, in another word, the status of the moment. The client will send the message with a timestamp of now.
 
-	StatsdClient client = new StatsdClient(new AFTransport());
+	StatsdClient client = new AFClient();
 	client.gauge("some.gauge", 500);
 
 The unit for gauge is 'g', here is the message:
@@ -147,12 +144,11 @@ The unit for gauge is 'g', here is the message:
 Again, you can also define message (with **[AppFirst Extended Format](#appfirst-extension)** only)
 	
 
-## About Transport
+## UDPClient and AFClient
 -------------------
-In order to switch between different ways of sending statsd message, we have the concept Transport. Currently we have `UDPTransport` by default in client.py and `AFTransport` by default in afclient if you want to communicate with [AppFirst Collector][collector].
+In order to send StatsD message in different ways, you can have different implementation to `StatsdClient` interface. Currently we have `UDPClient` and also `AFClient` if you want to communicate with [AppFirst Collector][collector]. `AFClient` will send statsd message through posix message queue, and send UDP message intead when fail to do so. If you are using it under windows, you should enable UDP server of the collector. Please send email to <support@appfirst.com> if you have question about this.
 
-
-To implement your own transport, implement `com.appfirst.statsd.Transport`.
+To write your own, just extended the skeleton class AbstractStatsdClient and implement the method `doSend(String)`
 
 ## Namespace
 -------------------
