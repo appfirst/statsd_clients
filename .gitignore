@@ -1,11 +1,14 @@
 *.class
 
 # Package Files #
-*.jar
+#*.jar
 *.war
 *.ear
+*.DS_Store
 
-.target
+manifest.mf
+target/classes/
+target/test-classes/
 .classpath
 .project
 .settings/

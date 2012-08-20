@@ -8,7 +8,9 @@ For Statsd, here's a definition I like from [Native StatsD integration with Gaug
 
 There are currently 3 types of stats: [Counting](#couting), [Timing](#timing) and [Gauge](#gauge). Etsy has defined the [concepts](https://github.com/etsy/statsd#concepts). 
 
-For API specification please see the documentation under `src/main/javadoc`
+For API specification please see the documentation under `src/main/javadoc/overview-summary.html`
+
+Include `target/jar/statsd.jar`
 
 ## Use Statsd Client
 -------------------
