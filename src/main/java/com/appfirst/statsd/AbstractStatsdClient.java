@@ -1,117 +1,119 @@
 package com.appfirst.statsd;
-
-/**
- * StatsdClient.java
- *
- * (C) 2011 Meetup, Inc.
- * Author: Andrew Gwozdziewycz <andrew@meetup.com>, @apgwoz
- *
- * 
- *
- * Example usage:
- *
- *    StatsdClient client = new StatsdClient("statsd.example.com", 8125);
- *    // increment by 1
- *    client.increment("foo.bar.baz");
- *    // increment by 10
- *    client.increment("foo.bar.baz", 10);
- *    // sample rate
- *    client.increment("foo.bar.baz", 10, .1);
- *    // increment multiple keys by 1
- *    client.increment("foo.bar.baz", "foo.bar.boo", "foo.baz.bar");
- *    // increment multiple keys by 10 -- yeah, it's "backwards"
- *    client.increment(10, "foo.bar.baz", "foo.bar.boo", "foo.baz.bar");
- *    // multiple keys with a sample rate
- *    client.increment(10, .1, "foo.bar.baz", "foo.bar.boo", "foo.baz.bar");
- *
- * Note: For best results, and greater availability, you'll probably want to 
- * create a wrapper class which creates a static client and proxies to it.
- *
- * You know... the "Java way."
- */
-
-import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.Random;
 
-public class StatsdClient {
+/**
+ * The Skeleton class of Java Statsd Client with AppFirst Extension.
+ * <br/>
+ * Note: For best results, and greater availability, you'll probably want to 
+ * create a wrapper class which creates a static client and proxies to it.
+ * <br/>
+ * You know... the "Java way."
+ * <br/>
+ * Based on Statsd Client of (C) 2011 Meetup, Inc.
+ * Author: Andrew Gwozdziewycz <andrew@meetup.com>, @apgwoz
+ * 
+ * @author Yangming Huang @leonmax
+ */
+public abstract class AbstractStatsdClient implements StatsdClient {
 	private static Random RNG = new Random();
 
-	private Transport _transport;
-
-	public StatsdClient() throws UnknownHostException, IOException{
-		_transport = new UDPTransport();
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int)
+	 */
+	@Override
+	public boolean gauge(String bucket, int value) {
+		return gauge(bucket, value, null);
 	}
 
-	public StatsdClient(Transport transport){
-		_transport = transport;
-	}
-
-	public void setTransport(Transport transport){
-		_transport = transport;
-	}
-
-	public boolean gauge(String key, int value) {
-		return gauge(key, value, null);
-	}
-
-	public boolean gauge(String key, int value, String message) {
-		String stat = buildMessage(key, value, "g", new Date().getTime(), message);
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int, java.lang.String)
+	 */
+	@Override
+	public boolean gauge(String bucket, int value, String message) {
+		String stat = buildMessage(bucket, value, "g", new Date().getTime(), message);
 		return send(stat, 1);
 	}
 
-	public boolean timing(String key, int value) {
-		return timing(key, value, null);
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.IStatsdClient#timing(java.lang.String, int)
+	 */
+	@Override
+	public boolean timing(String bucket, int value) {
+		return timing(bucket, value, null);
 	}
 
-	public boolean timing(String key, int value, String message) {
-		String stat = buildMessage(key, value, "ms", 1, message);
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.IStatsdClient#timing(java.lang.String, int, java.lang.String)
+	 */
+	@Override
+	public boolean timing(String bucket, int value, String message) {
+		String stat = buildMessage(bucket, value, "ms", 1, message);
 		return send(stat, 1);
 	}
 
-	public boolean decrement(String... keys) {
-		return updateStats(-1, null, 1, keys);
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.IStatsdClient#decrement(java.lang.String)
+	 */
+	@Override
+	public boolean decrement(String... buckets) {
+		return updateStats(-1, null, 1, buckets);
 	}
 
-	public boolean increment(String... keys) {
-		return updateStats(-1, null, 1, keys);
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.IStatsdClient#increment(java.lang.String)
+	 */
+	@Override
+	public boolean increment(String... buckets) {
+		return updateStats(-1, null, 1, buckets);
 	}
 
-	public boolean updateStats(int magnitude, String... buckets){
-		return updateStats(magnitude, null, 1, buckets);
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.IStatsdClient#updateStats(int, java.lang.String)
+	 */
+	@Override
+	public boolean updateStats(int value, String... buckets){
+		return updateStats(value, null, 1, buckets);
 	}
 	
-	public boolean updateStats(int magnitude, double sampleRate, String... buckets){
-		return updateStats(magnitude, null, sampleRate, buckets);
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.IStatsdClient#updateStats(int, double, java.lang.String)
+	 */
+	@Override
+	public boolean updateStats(int value, double sampleRate, String... buckets){
+		return updateStats(value, null, sampleRate, buckets);
 	}
 
-	public boolean updateStats(int magnitude, String message, double sampleRate, String... buckets){
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.IStatsdClient#updateStats(int, java.lang.String, double, java.lang.String)
+	 */
+	@Override
+	public boolean updateStats(int value, String message, double sampleRate, String... buckets){
 		boolean result = true;
 		for (int i = 0; i < buckets.length; i++) {
-			String stat = buildMessage(buckets[i], magnitude, "c", sampleRate, message);
+			String stat = buildMessage(buckets[i], value, "c", sampleRate, message);
 			result = result && send(stat, sampleRate);
 		}
 		return result;
 	}
 
-	private String buildMessage(String bucket, int magnitude, String type, double sampleRate, String message){
+	private String buildMessage(String bucket, int value, String type, double sampleRate, String message){
 		String field2 = "";
 		if (sampleRate < 1) {
 			field2 = String.format("@%f", sampleRate);
 		}
-		return buildMessage(bucket, magnitude, type, field2, message);
+		return buildMessage(bucket, value, type, field2, message);
 	}
 
-	private String buildMessage(String bucket, int magnitude, String type, long timestamp, String message){
+	private String buildMessage(String bucket, int value, String type, long timestamp, String message){
 		String field2 = String.valueOf(timestamp);
-		return buildMessage(bucket, magnitude, type, field2, message);
+		return buildMessage(bucket, value, type, field2, message);
 	}
 
-	private String buildMessage(String bucket, int magnitude, String type, String field2, String message){
+	private String buildMessage(String bucket, int value, String type, String field2, String message){
 		// bucket: field0 | field1 | field2                 | field3
 		// bucket: value  | type   | sampele_rate/timestamp | message
-		String stat = String.format("%s:%d|%s",  bucket, magnitude, type);
+		String stat = String.format("%s:%d|%s",  bucket, value, type);
 		// when message is there, we always keep field2 even if it's blank:
 		// bucket:2|c||some_message
 		if (message != null && !message.equals("")){
@@ -127,7 +129,15 @@ public class StatsdClient {
 		if (sampleRate < 1.0 && RNG.nextDouble() > sampleRate) 
 			return false;
 		else {
-			return this._transport.doSend(stat);
+			return this.doSend(stat);
 		}
 	}
+	
+	/**
+	 * To write a customized client, all you need is to implement this method which sends the stats message to StatsD Server thru your own media.
+	 * 
+	 * @param stat - the formatted message ready to send to the StatsD Server.
+	 * @return True if success, False otherwise.
+	 */
+	protected abstract boolean doSend(final String stat);
 }

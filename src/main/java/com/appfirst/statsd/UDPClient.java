@@ -9,28 +9,58 @@ import java.nio.channels.DatagramChannel;
 
 import org.apache.log4j.Logger;
 
-
-public class UDPTransport implements Transport{
-	private static Logger log = Logger.getLogger(StatsdClient.class.getName());
+/**
+ * Standard Statsd Client that sends stats thru UDP protocol.
+ * 
+ * @author Yangming Huang
+ *
+ */
+public class UDPClient extends AbstractStatsdClient implements StatsdClient{
+	public static int DEFAULT_STATSD_PORT = 8125;
+	private static Logger log = Logger.getLogger(UDPClient.class.getName());
 
 	private InetSocketAddress _address;
 	private DatagramChannel _channel;
 
-	public UDPTransport() throws UnknownHostException, IOException{
-		this(InetAddress.getLocalHost(), 8125);
+	/**
+	 * Initializes a new instance sends message to localhost with Default port 8125
+	 * 
+	 * @throws UnknownHostException
+	 * @throws IOException
+	 */
+	public UDPClient() throws UnknownHostException, IOException{
+		this(InetAddress.getLocalHost(), DEFAULT_STATSD_PORT);
 	}
 
-	public UDPTransport(String host, int port) throws UnknownHostException, IOException {
+	/**
+	 * Initializes a new instance sends message to specified host and port
+	 * 
+	 * @param host - The host address of the StatsD server
+	 * @param port - The port of the StatsD server
+	 * @throws UnknownHostException
+	 * @throws IOException
+	 */
+	public UDPClient(String host, int port) throws UnknownHostException, IOException {
 		this(InetAddress.getByName(host), port);
 	}
 
-	public UDPTransport(InetAddress host, int port) throws IOException {
+	/**
+	 * Initializes a new instance sends message to specified host and port
+	 * 
+	 * @param host - The InetAddress format of the host address of the StatsD server
+	 * @param port - The port of the StatsD server
+	 * @throws IOException
+	 */
+	public UDPClient(InetAddress host, int port) throws IOException {
 		this._address = new InetSocketAddress(host, port);
 		this._channel = DatagramChannel.open();
 	}
 
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.AbstractStatsdClient#doSend(java.lang.String)
+	 */
 	@Override
-	public boolean doSend(final String stat) {
+	protected final boolean doSend(final String stat) {
 		try {
 			final byte[] data = stat.getBytes("utf-8");
 			final ByteBuffer buff = ByteBuffer.wrap(data);
