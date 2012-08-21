@@ -5,18 +5,22 @@ StatsD Example Clients
 
 Here's a bunch of example code contributed by the communinty for interfacing with statsd in a variety of languages.
 
-    perl/Etsy/StatsD.pm      - Perl module
-    perl/perl-example.pl     - Perl using Etsy/StatsD module
-    java/StatsdClient.java   - JAVA
-    csharp/csharp_example.cs - C#
-    php/php-example.php      - PHP
-    python/                  - Python
     ruby/ruby_example.rb     - Ruby
     erlang/statsd.erl        - Erlang
+    perl/Etsy/StatsD.pm      - Perl module
+    perl/perl-example.pl     - Perl using Etsy/StatsD module
+    php/php-example.php      - PHP
+    python/                  - Python with AppFirst extension
+    csharp/                  - C#.NET with AppFirst extension
+    
+Other StatsD Client with AppFirst Extension
+===========================================
+
+   Java: [Java StatsD Client](http://github.com/appfirst/java_statsd_client/)
 
 Third Party StatsD Libraries
 ============================
 
    PERL: [Net::StatsD](https://github.com/cosimo/perl5-net-statsd/)
 
-Thankyou to all the contributors!
+Thanks Etsy for the brilliant idea. (We should also credit yahoo as Etsy was inspired heavily from Yahoo)
