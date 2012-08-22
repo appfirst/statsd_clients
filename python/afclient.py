@@ -92,7 +92,7 @@ class AFTransport(UDPTransport):
             post = send_data[:mlen]
             if self.verbosity:
                 print mlen, post
-            rc = self.shlib.mq_send(self.mqueue, post, len(post), self.severity)
+            rc = self.shlib.mq_send(self.mqueue, post, len(post), STATSD_SEVERITY)
             if (rc < 0):
                 if LOGGER:
                     LOGGER.error(u"Statsd Error: failed to mq_send return errcode %s" % errno.errorcode(self.rc))
