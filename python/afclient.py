@@ -10,22 +10,26 @@ try:
 except Exception, e:
     ctypes = None
 
+import errno
 from exceptions import Exception
 from client import UDPTransport, Statsd
 STATSD_SEVERITY = 3
 
+LOGGER = None
+
+def set_logger(logger):
+    global LOGGER
+    LOGGER = logger
+
 class AFTransport(UDPTransport):
-    def __init__(self, severity=STATSD_SEVERITY, useUDP=False, verbosity=False):
+    def __init__(self, use_udp=False, verbosity=False):
         self.mqueue_name = "/afcollectorapi"
         self.flags = 04001
         self.msgLen = 2048
         self.mqueue = None
-        self.severity = severity
         self.verbosity = verbosity
-        if not useUDP:
-            self.shlib = self._loadlib()
-        else:
-            self.shlib = None
+        self.shlib = self._loadlib()
+        self.use_udp = use_udp
 
     def _loadlib(self):
         if ctypes:
@@ -66,11 +70,15 @@ class AFTransport(UDPTransport):
                 self._createQueue()
             if self.mqueue:
                 self._emit(data)
+        except MQSendError, e:
+            if LOGGER:
+                LOGGER.error(str(e))
         except MQError, e:
             print e.msg
-            if self.verbosity:
-                print "Trying to use UDP Transport."
-            UDPTransport.emit(self, data)
+            if self.use_udp:
+                if self.verbosity:
+                    print "Trying to use UDP Transport."
+                UDPTransport.emit(self, data)
         except Exception, e:
             self._handleError(data, "mq_send")
 
@@ -84,7 +92,7 @@ class AFTransport(UDPTransport):
                 print mlen, post
             rc = self.shlib.mq_send(self.mqueue, post, len(post), self.severity)
             if (rc < 0):
-                raise MQError("Statsd Error: failed to mq_send")
+                raise MQSendError(rc, "Statsd Error: failed to mq_send")
 
     def close(self):
         if self.mqueue:
@@ -103,6 +111,14 @@ class MQError(Exception):
 
     def __str__(self):
         return str(self.msg)
+
+class MQSendError(Exception):
+    def __init__(self, rc, msg=None):
+        self.rc = rc
+        self.msg = msg or "Statsd Error"
+
+    def __str__(self):
+        return str(self.msg) + " return errcode %s" % errno.errorcode(self.rc)
 
 Statsd.set_transport(AFTransport())
 
