@@ -22,7 +22,7 @@ def set_logger(logger):
     LOGGER = logger
 
 class AFTransport(UDPTransport):
-    def __init__(self, use_udp=False, verbosity=False):
+    def __init__(self, use_udp=False, verbosity=False, logger=None):
         self.mqueue_name = "/afcollectorapi"
         self.flags = 04001
         self.msgLen = 2048
@@ -30,6 +30,8 @@ class AFTransport(UDPTransport):
         self.verbosity = verbosity
         self.shlib = self._loadlib()
         self.use_udp = use_udp
+        global LOGGER
+        LOGGER = logger
 
     def _loadlib(self):
         if ctypes:
@@ -92,7 +94,9 @@ class AFTransport(UDPTransport):
                 print mlen, post
             rc = self.shlib.mq_send(self.mqueue, post, len(post), self.severity)
             if (rc < 0):
-                raise MQSendError(rc, "Statsd Error: failed to mq_send")
+                if LOGGER:
+                    LOGGER.error(u"Statsd Error: failed to mq_send return errcode %s" % errno.errorcode(self.rc))
+                #raise MQSendError(rc, "Statsd Error: failed to mq_send")
 
     def close(self):
         if self.mqueue:
