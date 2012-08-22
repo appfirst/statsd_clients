@@ -72,7 +72,7 @@ class AFTransport(UDPTransport):
                 self._emit(data)
         except MQSendError, e:
             if LOGGER:
-                LOGGER.error(str(e))
+                LOGGER.error(unicode(e))
         except MQError, e:
             print e.msg
             if self.use_udp:
@@ -97,6 +97,8 @@ class AFTransport(UDPTransport):
     def close(self):
         if self.mqueue:
             try:
+                if LOGGER:
+                    LOGGER.warning(u"mq %s is being closed" % self.mqueue_name)
                 _ = self.shlib.mq_close(self.mqueue)
             except Exception, e:
                 pass
