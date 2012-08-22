@@ -149,7 +149,7 @@ class Statsd(object):
         Statsd._transport.close()
 
     @staticmethod
-    def time(bucket):
+    def time(bucket, enabled=True):
         """
         Convenient wrapper.
         This will count how many this wrapped function is invoked.
@@ -159,6 +159,8 @@ class Statsd(object):
         >>>    pass #do something
         """
         def wrap_timer(method):
+            if not enabled:
+                return method
             def send_statsd(*args, **kwargs):
                 start = time.time()
                 result = method(*args, **kwargs)
@@ -169,7 +171,7 @@ class Statsd(object):
         return wrap_timer
 
     @staticmethod
-    def count(buckets, sample_rate=1):
+    def count(buckets, sample_rate=1, enabled=True):
         """
         Convenient wrapper.
         This will count how many this wrapped function is invoked.
@@ -179,6 +181,8 @@ class Statsd(object):
             pass #do something
         """
         def wrap_counter(method):
+            if not enabled:
+                return method
             def send_statsd(*args, **kwargs):
                 result = method(*args, **kwargs)
                 Statsd.increment(buckets, sample_rate)
