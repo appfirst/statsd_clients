@@ -10,7 +10,7 @@ try:
 except Exception, e:
     ctypes = None
 
-import errno
+import errno, os, sys
 from exceptions import Exception
 from client import UDPTransport, Statsd
 STATSD_SEVERITY = 3
@@ -22,7 +22,8 @@ def set_logger(logger):
     LOGGER = logger
 
 class AFTransport(UDPTransport):
-    def __init__(self, use_udp=False, verbosity=False, logger=None):
+    def __init__(self, use_udp=True, verbosity=False, logger=None):
+        set_logger(logger)
         self.mqueue_name = "/afcollectorapi"
         self.flags = 04001
         self.msgLen = 2048
@@ -30,30 +31,24 @@ class AFTransport(UDPTransport):
         self.verbosity = verbosity
         self.shlib = self._loadlib()
         self.use_udp = use_udp
-        global LOGGER
-        LOGGER = logger
 
     def _loadlib(self):
         if ctypes:
             try:
                 ctypes.cdll.LoadLibrary("librt.so.1")
-                return ctypes.CDLL("librt.so.1")
+                return ctypes.CDLL("librt.so.1", use_errno=True)
             except Exception:
                 return None
 
     def _handleError(self, data, emsg=""):
+        if LOGGER:
+            LOGGER.error("Statsd Error: %s when sending %s" % (emsg, data))
         if self.mqueue:
             self.close()
             self.mqueue = None
-        if self.verbosity:
-            print "Error: ", emsg
-        import sys
-        from pprint import pprint
-        print "Unexpected error:", pprint(sys.exc_info())
 
     def _createQueue(self):
         if not self.shlib:
-            import sys
             if sys.version_info < (2, 5):
                 raise MQError("Statsd Error: require python 2.5 or greater but using %s.%s" %
                               (sys.version_info[0], sys.version_info[1]))
@@ -61,6 +56,8 @@ class AFTransport(UDPTransport):
                 raise MQError("Statsd Error: native support for AFTransport is not available")
         try:
             self.mqueue = self.shlib.mq_open(self.mqueue_name, self.flags)
+            if LOGGER:
+                LOGGER.info("Statsd mqueue %s opened successfully" % self.mqueue)
             if (self.mqueue < 0):
                 raise MQError("Statsd Error: AFCollector not installed")
         except Exception, e:
@@ -77,12 +74,14 @@ class AFTransport(UDPTransport):
                 LOGGER.error(unicode(e))
         except MQError, e:
             print e.msg
+            if LOGGER:
+                LOGGER.error(e.msg)
             if self.use_udp:
                 if self.verbosity:
                     print "Trying to use UDP Transport."
                 UDPTransport.emit(self, data)
         except Exception, e:
-            self._handleError(data, "mq_send")
+            self._handleError(data, str(e))
 
     def _emit(self, data):
         for stat in data.keys():
@@ -94,15 +93,17 @@ class AFTransport(UDPTransport):
                 print mlen, post
             rc = self.shlib.mq_send(self.mqueue, post, len(post), STATSD_SEVERITY)
             if (rc < 0):
-                if LOGGER:
-                    LOGGER.error(u"Statsd Error: failed to mq_send return errcode %s" % errno.errorcode(self.rc))
-                #raise MQSendError(rc, "Statsd Error: failed to mq_send")
+                errornumber = ctypes.get_errno()
+                if errno.errorcode[errornumber] != "EAGAIN":
+                    errmsg = os.strerror(errornumber)
+                    if LOGGER:
+                        LOGGER.error(u"Statsd Error: failed to mq_send %s" % errmsg)
 
     def close(self):
         if self.mqueue:
+            if LOGGER:
+                LOGGER.warning(u"mq %s is being closed" % self.mqueue_name)
             try:
-                if LOGGER:
-                    LOGGER.warning(u"mq %s is being closed" % self.mqueue_name)
                 _ = self.shlib.mq_close(self.mqueue)
             except Exception, e:
                 pass
