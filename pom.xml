@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.appfirst</groupId>
   <artifactId>java_statsd_client</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2</version>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <plugins>
@@ -16,18 +16,6 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
-        <configuration>
-          <archive>
-            <manifest>
-              <addClasspath>true</addClasspath>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>2.8.1</version>
         <configuration>
@@ -36,10 +24,24 @@
           <docfilessubdirs>true</docfilessubdirs>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>com.appfirst.statsd.AFClient</mainClass>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>../lib/</classpathPrefix>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <properties>
-  	<jna.version>3.4.0</jna.version>
+  	<jna.version>3.2.7</jna.version>
   	<log4j.version>1.2.17</log4j.version>
   </properties>
   <dependencies>
@@ -48,14 +50,14 @@
   		<artifactId>jna</artifactId>
   		<version>${jna.version}</version>
   		<scope>system</scope>
-  		<systemPath>${project.basedir}/lib/jna-${jna.version}.jar</systemPath>
+  		<systemPath>${project.basedir}/lib/jna.jar</systemPath>
   	</dependency>
   	<dependency>
   		<groupId>net.java.dev.jna</groupId>
   		<artifactId>platform</artifactId>
+  		<systemPath>${project.basedir}/lib/platform.jar</systemPath>
   		<version>${jna.version}</version>
   		<scope>system</scope>
-  		<systemPath>${project.basedir}/lib/platform-${jna.version}.jar</systemPath>
   	</dependency>
   	<dependency>
   		<groupId>log4j</groupId>
