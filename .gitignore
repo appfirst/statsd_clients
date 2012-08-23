@@ -12,3 +12,4 @@ target/test-classes/
 .classpath
 .project
 .settings/
+.externalToolBuilders/
