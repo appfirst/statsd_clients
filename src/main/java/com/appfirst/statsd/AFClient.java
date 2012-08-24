@@ -3,8 +3,10 @@ package com.appfirst.statsd;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
+import com.sun.jna.LastErrorException;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 
@@ -15,13 +17,16 @@ import com.sun.jna.Native;
  *
  */
 public class AFClient extends AbstractStatsdClient implements StatsdClient {
-	private static Logger log = Logger.getLogger(AFClient.class.getName());
+	static Logger log = Logger.getLogger(AFClient.class);
 
 	private static String AFCAPIName = "/afcollectorapi";
 	private static String LibName = "rt";
-	private static int O_WRONLY = 01;
+	private static int FLAG = 04001;
 	private static int AFCMaxMsgSize = 2048;
 	private static int AFCSeverityStatsd = 3;
+	
+	private int mqd = -1;
+	private MQ mqlib = null;
 
 	/**
 	 * Default Constructor. Initialize AFClient.
@@ -42,45 +47,65 @@ public class AFClient extends AbstractStatsdClient implements StatsdClient {
 		}
 		return _udpClient.doSend(stat);
 	}
+	
+	private int openQueue(){
+		if (this.mqd == -1){
+			if (this.mqlib == null){
+				this.mqlib = (MQ) Native.loadLibrary(LibName, MQ.class);
+			}
+			this.mqd = this.mqlib.mq_open(AFCAPIName, FLAG);
+		}
+		return this.mqd;
+	}
 
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.AbstractStatsdClient#doSend(java.lang.String)
 	 */
-	@Override
 	protected final boolean doSend(final String stat) {
 		// trim msg if over allowed size
 		String msg = (stat.length() > AFCMaxMsgSize) ? stat.substring(0, AFCMaxMsgSize) : stat;
+
+		log.info(String.format("Sending stat: %s", stat));
 		try {
-			MQ mq = (MQ) Native.loadLibrary(LibName, MQ.class);
-			int mqd = mq.mq_open(AFCAPIName, O_WRONLY);
-			int rc = mq.mq_send(mqd, msg, msg.length(), AFCSeverityStatsd);
-			AFCReturnCode rv = AFCReturnCode.valueOf(rc);
-			mq.mq_close(mqd);
-	
-			if (rv == AFCReturnCode.AFCSuccess) {
-				return true;
-			}else {
-				log.error(String.format("Send stat %s with AFClient returns %s", stat, rv));
-				throw new Exception();
-			}
+			int mqd = openQueue();
+			int rc = this.mqlib.mq_send(mqd, msg, msg.length(), AFCSeverityStatsd);
+			log.info(String.format("Sent: %s", stat));
+			return AFCReturnCode.AFCSuccess == AFCReturnCode.valueOf(rc);
+		} catch (LastErrorException e) {
+			log.error(String.format("Could not send stat, Error Code: %s", e.getErrorCode()));
+			return false;
 		} catch (Exception e) {
 			log.error(String.format("Could not send stat %s with AFClient, sending UDP msg to localhost.", stat));
+			this.close();
 			return this.doUDPSend(msg);
 		}
 	}
-
 	
+	public void close(){
+		if (this.mqd >= 0){
+			try{
+				mqlib.mq_close(mqd);
+			} catch (Exception e) {
+			}
+			this.mqd = -1;
+		}
+	}
+	
+	public void finalize(){
+		this.close();
+	}
+
 	/**
 	 * Interface that wraps basic functions of Posix Message Queue
 	 */
 	interface MQ extends Library {
-		int mq_open(String filename, int mode);
-		int mq_close(int mqd);
-		int mq_send(int mqd, String msg, int len, int prio);
+		int mq_open(String filename, int mode) throws LastErrorException;;
+		int mq_close(int mqd) throws LastErrorException;;
+		int mq_send(int mqd, String msg, int len, int prio) throws LastErrorException;;
 	}
 
 	/**
-	 * AppFirst Client Return Code Enumeration.
+	 * AFClient Return Code Enumeration.
 	 *
 	 */
 	enum AFCReturnCode{
@@ -120,20 +145,20 @@ public class AFClient extends AbstractStatsdClient implements StatsdClient {
 		}
 	}
 
-	
 	/**
 	 * This main function only intends to send some basic messages for testing.
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(String[] args){
+		BasicConfigurator.configure();
 		StatsdClient client = new AFClient();
-		client.gauge("gauge", 123);
-		client.increment("counter");
-		client.decrement("counter");
-		client.updateStats(2, null, .5, "counter", "counter2");
-		client.updateStats(-1, null, 1, "counter");
-		client.timing("timing", 500);
-		client.timing("timing", 488, "hello");
+		client.gauge("test.java.gauge", 1);
+		client.increment("test.java.counter");
+		client.decrement("test.java.counter");
+		client.updateStats(2, null, .5, "test.java.counter", "test.java.counter2");
+		client.updateStats(-1, null, 1, "test.java.counter");
+		client.timing("test.java.timing", 500);
+		client.timing("test.java.timing", 488, "hello");
 	}
 }
