@@ -21,7 +21,6 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int)
 	 */
-	@Override
 	public boolean gauge(String bucket, int value) {
 		return gauge(bucket, value, null);
 	}
@@ -29,7 +28,6 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int, java.lang.String)
 	 */
-	@Override
 	public boolean gauge(String bucket, int value, String message) {
 		String stat = buildMessage(bucket, value, "g", new Date().getTime(), message);
 		return send(stat, 1);
@@ -38,7 +36,6 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#timing(java.lang.String, int)
 	 */
-	@Override
 	public boolean timing(String bucket, int value) {
 		return timing(bucket, value, null);
 	}
@@ -46,7 +43,6 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#timing(java.lang.String, int, java.lang.String)
 	 */
-	@Override
 	public boolean timing(String bucket, int value, String message) {
 		String stat = buildMessage(bucket, value, "ms", 1, message);
 		return send(stat, 1);
@@ -55,7 +51,6 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#decrement(java.lang.String)
 	 */
-	@Override
 	public boolean decrement(String... buckets) {
 		return updateStats(-1, null, 1, buckets);
 	}
@@ -63,15 +58,13 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#increment(java.lang.String)
 	 */
-	@Override
 	public boolean increment(String... buckets) {
-		return updateStats(-1, null, 1, buckets);
+		return updateStats(1, null, 1, buckets);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#updateStats(int, java.lang.String)
 	 */
-	@Override
 	public boolean updateStats(int value, String... buckets){
 		return updateStats(value, null, 1, buckets);
 	}
@@ -79,7 +72,6 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#updateStats(int, double, java.lang.String)
 	 */
-	@Override
 	public boolean updateStats(int value, double sampleRate, String... buckets){
 		return updateStats(value, null, sampleRate, buckets);
 	}
@@ -87,7 +79,6 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#updateStats(int, java.lang.String, double, java.lang.String)
 	 */
-	@Override
 	public boolean updateStats(int value, String message, double sampleRate, String... buckets){
 		boolean result = true;
 		for (int i = 0; i < buckets.length; i++) {

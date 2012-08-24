@@ -17,7 +17,7 @@ import org.apache.log4j.Logger;
  */
 public class UDPClient extends AbstractStatsdClient implements StatsdClient{
 	public static int DEFAULT_STATSD_PORT = 8125;
-	private static Logger log = Logger.getLogger(UDPClient.class.getName());
+	private static Logger log = Logger.getLogger(UDPClient.class);
 
 	private InetSocketAddress _address;
 	private DatagramChannel _channel;
@@ -59,7 +59,6 @@ public class UDPClient extends AbstractStatsdClient implements StatsdClient{
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.AbstractStatsdClient#doSend(java.lang.String)
 	 */
-	@Override
 	protected final boolean doSend(final String stat) {
 		try {
 			final byte[] data = stat.getBytes("utf-8");
