@@ -1,7 +1,7 @@
 var PosixMQ = require('pmq');
-var readbuf, mq;
+var readbuf,
+    mq = new PosixMQ();
 
-mq = new PosixMQ();
 mq.on('messages', function() {
   var n;
   while ((n = this.shift(readbuf)) !== false) {
@@ -9,8 +9,12 @@ mq.on('messages', function() {
     console.log('%s - Messages left: %s', new Date(), this.curmsgs);
     console.log('---------------------------------------');
   }
-  // this.unlink();
-  //this.close();
 });
+
+process.on('exit', function () {
+  console.log("closing mq");
+  mq.close();
+});
+
 mq.open({ name: '/afcollectorapi'});
 readbuf = new Buffer(mq.msgsize);
