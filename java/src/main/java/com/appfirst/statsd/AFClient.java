@@ -65,7 +65,7 @@ public class AFClient extends AbstractStatsdClient implements StatsdClient {
 		// trim msg if over allowed size
 		String msg = (stat.length() > AFCMaxMsgSize) ? stat.substring(0, AFCMaxMsgSize) : stat;
 
-		log.info(String.format("Sending stat: %s", stat));
+		// log.info(String.format("Sending stat: %s", stat));
 		try {
 			int mqd = openQueue();
 			int rc = this.mqlib.mq_send(mqd, msg, msg.length(), AFCSeverityStatsd);
@@ -74,6 +74,10 @@ public class AFClient extends AbstractStatsdClient implements StatsdClient {
 		} catch (LastErrorException e) {
 			log.error(String.format("Could not send stat, Error Code: %s", e.getErrorCode()));
 			return false;
+		} catch (UnsatisfiedLinkError ufe){
+			log.error(String.format("%s, sending UDP msg to localhost.",ufe.getMessage(), stat));
+			this.close();
+			return this.doUDPSend(msg);
 		} catch (Exception e) {
 			log.error(String.format("Could not send stat %s with AFClient, sending UDP msg to localhost.", stat));
 			this.close();
