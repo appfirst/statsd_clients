@@ -1,0 +1,15 @@
+*.class
+
+# Package Files #
+#*.jar
+*.war
+*.ear
+*.DS_Store
+
+manifest.mf
+target/classes/
+target/test-classes/
+.classpath
+.project
+.settings/
+.externalToolBuilders/
