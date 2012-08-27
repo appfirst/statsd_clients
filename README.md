@@ -10,13 +10,9 @@ Here's a bunch of example code contributed by the communinty for interfacing wit
     perl/Etsy/StatsD.pm      - Perl module
     perl/perl-example.pl     - Perl using Etsy/StatsD module
     php/php-example.php      - PHP
+    java/                    - Java with AppFirst Extension
     python/                  - Python with AppFirst extension
     csharp/                  - C#.NET with AppFirst extension
-    
-Other StatsD Client with AppFirst Extension
-===========================================
-
-   Java: [Java StatsD Client](http://github.com/appfirst/java_statsd_client/)
 
 Third Party StatsD Libraries
 ============================
