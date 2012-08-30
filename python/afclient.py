@@ -12,7 +12,7 @@ except Exception, e:
 
 import errno, os, sys
 from exceptions import Exception
-from client import UDPTransport, Statsd
+from client import UDPTransport, Statsd, GeyserStategy
 STATSD_SEVERITY = 3
 
 LOGGER = None
@@ -64,6 +64,8 @@ class AFTransport(UDPTransport):
             raise MQError("Statsd Error: unknown error occur when open mqueue")
 
     def emit(self, data):
+        if self.verbosity:
+            print "Sending %s" % data
         try:
             if not self.mqueue:
                 self._createQueue()
@@ -128,7 +130,10 @@ class MQSendError(Exception):
         return str(self.msg) + " return errcode %s" % errno.errorcode(self.rc)
 
 Statsd.set_transport(AFTransport())
+Statsd.set_strategy(GeyserStategy())
 
 if __name__ == "__main__":
     Statsd.set_transport(AFTransport(verbosity=True))
-    Statsd.increment("mqtest")
+#    Statsd.increment("mqtest")
+#    Statsd.increment("mqtest")
+#    Statsd.increment("mqtest")
