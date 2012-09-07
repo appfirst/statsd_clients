@@ -64,10 +64,18 @@ class StatsdBuffer(object):
         else:
             return True
 
-    def get(self, bucket, clazz):
+    def add(self, bucket, clazz, stat, message=None, sample_rate=1):
         self.lock.acquire()
         try:
-            stat = self.buf.setdefault(bucket, clazz(bucket))
+            if (clazz == CounterBucket):
+                stat = self.buf.setdefault(bucket, clazz(bucket)) \
+                           .aggregate(stat, message, sample_rate)
+            elif (clazz == TimerBucket):
+                stat = self.buf.setdefault(bucket, clazz(bucket)) \
+                           .aggregate(stat, message)
+            elif (clazz == GaugeBucket):
+                stat = self.buf.setdefault(bucket, clazz(bucket)) \
+                           .aggregate(stat, message)
         finally:
             self.lock.release()
         return stat
@@ -82,7 +90,7 @@ class StatsdBuffer(object):
         data = dict([(k,str(v)) for k,v in laststat.iteritems()])
         return data
 
-class Counter(object):
+class CounterBucket(object):
     def __init__(self, bucket):
         self.bucket = bucket
         self.stat = 0
@@ -93,7 +101,7 @@ class Counter(object):
         else:
             return "%s|c" % self.stat
 
-    def aggregate(self, stat, sample_rate=1, message=None):
+    def aggregate(self, stat, message=None, sample_rate=1):
         if sample_rate < 1 and random.random() > sample_rate:
             return self
         self.stat += int(stat/sample_rate)
@@ -101,7 +109,7 @@ class Counter(object):
         # for chaining
         return self
 
-class Timer(object):
+class TimerBucket(object):
     def __init__(self, bucket):
         self.bucket = bucket
         self.summstat = 0
@@ -121,7 +129,7 @@ class Timer(object):
         # for chaining
         return self
 
-class Gauge(object):
+class GaugeBucket(object):
     def __init__(self, bucket):
         self.bucket = bucket
 
@@ -156,8 +164,9 @@ class GeyserStategy():
             finally:
                 self.triggered = False
             return result
-        t = threading.Timer(self.interval, wrap_func)
-        t.start()
+        self.t = threading.Timer(self.interval, wrap_func)
+        self.t.daemon = True
+        self.t.start()
 
 class InstantStategy():
     def setup(self, func, *args, **kwargs):
@@ -188,7 +197,7 @@ class Statsd(object):
         >>> from client import Statsd
         >>> Statsd.gauge('some.gauge', 500)
         """
-        Statsd._buffer.get(bucket, Gauge).aggregate(reading, message)
+        Statsd._buffer.add(bucket, GaugeBucket, reading, message)
         Statsd.send()
 
     @staticmethod
@@ -198,7 +207,7 @@ class Statsd(object):
         >>> from client import Statsd
         >>> Statsd.timing('some.time', 500)
         """
-        Statsd._buffer.get(bucket, Timer).aggregate(elapse, message)
+        Statsd._buffer.add(bucket, TimerBucket, elapse, message)
         Statsd.send()
 
     @staticmethod
@@ -227,7 +236,7 @@ class Statsd(object):
         if (type(buckets) is not list):
             buckets = [buckets]
         for bucket in buckets:
-            Statsd._buffer.get(bucket, Counter).aggregate(delta, sample_rate, message)
+            Statsd._buffer.add(bucket, CounterBucket, delta, message, sample_rate)
         Statsd.send()
 
     @staticmethod

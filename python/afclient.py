@@ -133,7 +133,10 @@ Statsd.set_transport(AFTransport())
 Statsd.set_strategy(GeyserStategy())
 
 if __name__ == "__main__":
+#    import time
     Statsd.set_transport(AFTransport(verbosity=True))
-#    Statsd.increment("mqtest")
-#    Statsd.increment("mqtest")
-#    Statsd.increment("mqtest")
+    count = 1
+    while True:
+        Statsd.increment("mqtest")
+        print "send mqtest %s" % count
+        count += 1
