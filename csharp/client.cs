@@ -28,6 +28,7 @@ namespace Statsd
             udpClient = new UdpClient(host, port);
         }
         
+        #region Gauge Functions
 
         //Gauge Functions
         public bool Gauge(string key, int value)
@@ -40,7 +41,6 @@ namespace Statsd
             return GaugeWithMessage(null,  key, value, sampleRate);
         }
 
-
         //GaugeWithMessage Functions
         public bool GaugeWithMessage(string message, string key, int value)
         {
@@ -52,6 +52,9 @@ namespace Statsd
             return Send(message, DateTimeToUnixTimestamp(DateTime.UtcNow), sampleRate, String.Format("{0}:{1:d}|g", key, value));
         }
 
+        #endregion
+
+        #region Timing Functions
 
         //Timing Functions
         public bool Timing(string key, int value)
@@ -74,6 +77,10 @@ namespace Statsd
         {
             return Send(message, sampleRate, String.Format("{0}:{1:d}|ms", key, value));
         }
+
+        #endregion
+
+        #region Counter Functions
 
         // Decrement Functions
         public bool Decrement(string key)
@@ -207,19 +214,21 @@ namespace Statsd
         {
             return Send(message, sampleRate, keys.Select(key => String.Format("{0}:{1}|c", key, magnitude)).ToArray());
         }
-
+        
+        #endregion
 
         protected bool initMailSlot(string slotname)
         {
-
-            slotHandle = External.CreateFile(slotname,
-              (uint)FileAccess.Write,
-               (uint)FileShare.Read,
-               0,
-               (uint)FileMode.Open,
-               (uint)FileAttributes.Normal,
-               0);
-
+            if (slotHandle == null)
+            {
+                slotHandle = External.CreateFile(slotname,
+                  (uint)FileAccess.Write,
+                   (uint)FileShare.Read,
+                   0,
+                   (uint)FileMode.Open,
+                   (uint)FileAttributes.Normal,
+                   0);
+            }
             return !slotHandle.IsInvalid;
         }
 
@@ -258,7 +267,7 @@ namespace Statsd
 
             return messageString;
         }
-        
+        #region Sending Statsd Message
         protected bool Send(string message, string stat, double sampleRate)
         {
             return Send(message, sampleRate, stat);
@@ -315,19 +324,25 @@ namespace Statsd
 
         protected bool SendByMailSlot(string stat)
         {
-
-            if (!slotHandle.IsClosed)
+            try
             {
-                if (fs == null)
-                    fs = new FileStream(slotHandle, FileAccess.Write);
+                if (!slotHandle.IsClosed)
+                {
+                    if (fs == null)
+                        fs = new FileStream(slotHandle, FileAccess.Write);
 
-                System.Text.UnicodeEncoding encoding = new System.Text.UnicodeEncoding();
-                string data_string = String.Format("{0}:{1}:{2}", Process.GetCurrentProcess().Id, 3, stat);
-                byte[] data_bytes = encoding.GetBytes(data_string);
-                int byteCount = encoding.GetByteCount(data_string);
+                    System.Text.UnicodeEncoding encoding = new System.Text.UnicodeEncoding();
+                    string data_string = String.Format("{0}:{1}:{2}", Process.GetCurrentProcess().Id, 3, stat);
+                    byte[] data_bytes = encoding.GetBytes(data_string);
+                    int byteCount = encoding.GetByteCount(data_string);
 
-                fs.Write(data_bytes, 0, byteCount);
-                fs.Flush();
+                    fs.Write(data_bytes, 0, byteCount);
+                    fs.Flush();
+                }
+            }
+            catch (IOException ioe)
+            {
+                Console.WriteLine("{0} Exception caught.", ioe);
             }
 
             return true;
@@ -341,18 +356,20 @@ namespace Statsd
 
             if (usingCollector)
             {
+                Console.WriteLine("Sending with MailSlot");
                 retval = SendByMailSlot(stat);
             }
             else
             {
+                Console.WriteLine("Sending with UDP");
                 retval = SendByUDP(stat);
             }
             return retval;
 
         }
+        #endregion
 
-
-        protected static  ulong DateTimeToUnixTimestamp(DateTime dateTime)
+        protected static ulong DateTimeToUnixTimestamp(DateTime dateTime)
         {
 	    DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             return (ulong)(DateTime.UtcNow - UnixEpoch).TotalSeconds;
