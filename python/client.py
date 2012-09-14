@@ -17,6 +17,7 @@ Sends statistics to the appfirst collector over UDP
 import sys
 import time
 import random
+import threading
 from socket import socket, AF_INET, SOCK_DGRAM
 
 #---------------------------------------------------------------------------
@@ -50,15 +51,144 @@ class UDPTransport(object):
         pass
 
 #---------------------------------------------------------------------------
+#   Statsd Buffer to aggregate stats of the same bucket and dump them together
+#---------------------------------------------------------------------------
+class StatsdBuffer(object):
+    def __init__(self):
+        self.buf = {}
+        self.lock = threading.Lock()
+
+    def is_empty(self):
+        if self.buf:
+            return False
+        else:
+            return True
+
+    def add(self, bucket, clazz, stat, message=None, sample_rate=1):
+        self.lock.acquire()
+        try:
+            if (clazz == CounterBucket):
+                stat = self.buf.setdefault(bucket, clazz(bucket)) \
+                           .aggregate(stat, message, sample_rate)
+            elif (clazz == TimerBucket):
+                stat = self.buf.setdefault(bucket, clazz(bucket)) \
+                           .aggregate(stat, message)
+            elif (clazz == GaugeBucket):
+                stat = self.buf.setdefault(bucket, clazz(bucket)) \
+                           .aggregate(stat, message)
+        finally:
+            self.lock.release()
+        return stat
+
+    def dump(self):
+        self.lock.acquire()
+        try:
+            laststat = self.buf
+            self.buf = {}
+        finally:
+            self.lock.release()
+        data = dict([(k,str(v)) for k,v in laststat.iteritems()])
+        return data
+
+class CounterBucket(object):
+    def __init__(self, bucket):
+        self.bucket = bucket
+        self.stat = 0
+
+    def __str__(self):
+        if self.message:
+            return "%s|c||%s" % (self.stat, self.message)
+        else:
+            return "%s|c" % self.stat
+
+    def aggregate(self, stat, message=None, sample_rate=1):
+        if sample_rate < 1 and random.random() > sample_rate:
+            return self
+        self.stat += int(stat/sample_rate)
+        self.message = message
+        # for chaining
+        return self
+
+class TimerBucket(object):
+    def __init__(self, bucket):
+        self.bucket = bucket
+        self.summstat = 0
+        self.count = 0
+
+    def __str__(self):
+        avg = self.sumstat/self.count;
+        if self.message:
+            return "%s|ms||%s" % (avg, self.message)
+        else:
+            return "%s|ms" % self.stat
+
+    def aggregate(self, stat, message=None):
+        self.summstat += stat
+        self.count += 1
+        self.message = message
+        # for chaining
+        return self
+
+class GaugeBucket(object):
+    def __init__(self, bucket):
+        self.bucket = bucket
+
+    def __str__(self):
+        if self.message:
+            return "%s|g|%s|%s" % (self.stat, self.timestamp, self.message)
+        else:
+            return "%s|g|%s" % (self.stat, self.timestamp)
+
+    def aggregate(self, stat, message=None):
+        self.stat = stat
+        self.message = message
+        self.timestamp=int(time.time())
+        # for chaining
+        return self
+
+#---------------------------------------------------------------------------
+#   Stategy such as where the data is stored and how frequent the stats are sent
+#---------------------------------------------------------------------------
+class GeyserStategy():
+    def __init__(self, interval=20):
+        self.interval = interval
+        self.triggered = False
+
+    def setup(self, func, *args, **kwargs):
+        if self.triggered:
+            return
+        self.triggered = True
+        def wrap_func():
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                self.triggered = False
+            return result
+        self.t = threading.Timer(self.interval, wrap_func)
+        self.t.daemon = True
+        self.t.start()
+
+class InstantStategy():
+    def setup(self, func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+#---------------------------------------------------------------------------
 #   Statsd Client
 #---------------------------------------------------------------------------
 class Statsd(object):
+
+    _buffer = StatsdBuffer()
     _transport = UDPTransport()
+    _strategy = InstantStategy()
 
     @staticmethod
     def set_transport(transport):
         Statsd._transport.close()
         Statsd._transport = transport
+
+    @staticmethod
+    def set_strategy(strategy):
+        Statsd._strategy = strategy
 
     @staticmethod
     def gauge(bucket, reading, message=None):
@@ -67,9 +197,8 @@ class Statsd(object):
         >>> from client import Statsd
         >>> Statsd.gauge('some.gauge', 500)
         """
-        stats = {}
-        stats[bucket] = "%d|g" % reading
-        Statsd.send(stats, message=message, timestamp=int(time.time()))
+        Statsd._buffer.add(bucket, GaugeBucket, reading, message)
+        Statsd.send()
 
     @staticmethod
     def timing(bucket, elapse, message=None):
@@ -78,9 +207,8 @@ class Statsd(object):
         >>> from client import Statsd
         >>> Statsd.timing('some.time', 500)
         """
-        stats = {}
-        stats[bucket] = "%d|ms" % elapse
-        Statsd.send(stats, message=message)
+        Statsd._buffer.add(bucket, TimerBucket, elapse, message)
+        Statsd.send()
 
     @staticmethod
     def increment(buckets, sample_rate=1, message=None):
@@ -100,52 +228,29 @@ class Statsd(object):
         Statsd.update_stats(buckets, -1, sample_rate, message)
 
     @staticmethod
-    def update_stats(buckets, delta=1, sampleRate=1, message=None):
+    def update_stats(buckets, delta=1, sample_rate=1, message=None):
         """
         Updates one or more stats counters by arbitrary amounts
         >>> Statsd.update_stats('some.int',10)
         """
         if (type(buckets) is not list):
             buckets = [buckets]
-        stats = {}
         for bucket in buckets:
-            stats[bucket] = "%s|c" % delta
-
-        Statsd.send(stats, sampleRate, message)
-
-    @staticmethod
-    def _build_message(data, sample_rate=1, message=None, timestamp=None):
-        # the format will be position-invariant:
-        # bucket: field0 | field1 | field2                 | field3
-        # bucket: value  | unit   | sampele_rate/timestamp | message
-
-        # field2 is either sample_rate or timestamp
-        field2 = ""
-        if (sample_rate < 1):
-            field2 = "@%s" % sample_rate
-        elif timestamp:
-            field2 = str(timestamp)
-
-        # when message is there, we always keep field2 even if it's blank:
-        # bucket:2|c||some_message
-        if message:
-            for stat in data.keys():
-                data[stat] += "|%s|%s" % (field2, message)
-        elif field2 != "":
-            for stat in data.keys():
-                data[stat] += "|%s" % field2
-
-        return data
+            Statsd._buffer.add(bucket, CounterBucket, delta, message, sample_rate)
+        Statsd.send()
 
     @staticmethod
-    def send(data, sample_rate=1, message=None, timestamp=None):
-        if sample_rate < 1 and random.random() > sample_rate:
-            return
-        data = Statsd._build_message(data, sample_rate, message, timestamp)
-        Statsd._transport.emit(data)
+    def send():
+        Statsd._strategy.setup(Statsd.flush, Statsd._buffer)
+
+    @staticmethod
+    def flush(buf):
+        Statsd._transport.emit(buf.dump())
 
     @staticmethod
     def shutdown():
+        if not Statsd._buffer.is_empty():
+            Statsd.flush(Statsd._buffer)
         Statsd._transport.close()
 
     @staticmethod
@@ -190,7 +295,10 @@ class Statsd(object):
             return send_statsd
         return wrap_counter
 
-#Let's try and shutdown automatically on application exit...
+
+'''
+shutdown automatically on application exit...
+'''
 try:
     import atexit
     atexit.register(Statsd.shutdown)
