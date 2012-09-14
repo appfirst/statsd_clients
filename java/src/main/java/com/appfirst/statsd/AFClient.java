@@ -16,7 +16,7 @@ import com.sun.jna.Native;
  * @author Yangming Huang
  *
  */
-public class AFClient extends AbstractStatsdClient implements StatsdClient {
+public class AFClient extends AbstractStatsdClient {
 	static Logger log = Logger.getLogger(AFClient.class);
 
 	private static String AFCAPIName = "/afcollectorapi";
@@ -32,6 +32,7 @@ public class AFClient extends AbstractStatsdClient implements StatsdClient {
 	 * Default Constructor. Initialize AFClient.
 	 */
 	public AFClient() {
+		this.setStrategy(new GeyserStrategy(20));
 	}
 
 	private UDPClient _udpClient = null;
@@ -65,7 +66,7 @@ public class AFClient extends AbstractStatsdClient implements StatsdClient {
 		// trim msg if over allowed size
 		String msg = (stat.length() > AFCMaxMsgSize) ? stat.substring(0, AFCMaxMsgSize) : stat;
 
-		// log.info(String.format("Sending stat: %s", stat));
+		log.info(String.format("Sending stat: %s", stat));
 		try {
 			int mqd = openQueue();
 			int rc = this.mqlib.mq_send(mqd, msg, msg.length(), AFCSeverityStatsd);
