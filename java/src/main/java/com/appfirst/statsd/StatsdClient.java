@@ -92,4 +92,16 @@ public interface StatsdClient {
 	public abstract boolean updateStats(int value, String message,
 			double sampleRate, String... buckets);
 
+	/**
+	 * Send counter metrics with arbitrary magnitude. This one supports sampling and sending message (AppFirst Extension)
+	 * 
+	 * @param bucket - The bucket name of the counter.
+	 * @param value - the updating value of the counter.
+	 * @param sampleRate - Rate of sampling. Note this is a counter only feature.
+	 * @param message - the message of AppFirst Extended Statsd.
+	 * @return True if success, False if fail to send stats.
+	 */
+	public abstract boolean updateStats(String bucket, int value,
+			double sampleRate, String message);
+
 }

@@ -60,6 +60,7 @@ public class UDPClient extends AbstractStatsdClient implements StatsdClient{
 	 * @see com.appfirst.statsd.AbstractStatsdClient#doSend(java.lang.String)
 	 */
 	protected final boolean doSend(final String stat) {
+		log.info(String.format("Sending stat: %s", stat));
 		try {
 			final byte[] data = stat.getBytes("utf-8");
 			final ByteBuffer buff = ByteBuffer.wrap(data);

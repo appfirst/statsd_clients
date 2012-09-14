@@ -1,6 +1,5 @@
 package com.appfirst.statsd;
-import java.util.Date;
-import java.util.Random;
+import java.util.Map;
 
 /**
  * The Skeleton class of Java Statsd Client with AppFirst Extension.
@@ -11,12 +10,28 @@ import java.util.Random;
  * You know... the "Java way."
  * <br/>
  * Based on Statsd Client of (C) 2011 Meetup, Inc.
- * Author: Andrew Gwozdziewycz <andrew@meetup.com>, @apgwoz
+ * by Andrew Gwozdziewycz <andrew@meetup.com>, @apgwoz
  * 
  * @author Yangming Huang @leonmax
  */
-public abstract class AbstractStatsdClient implements StatsdClient {
-	private static Random RNG = new Random();
+public abstract class AbstractStatsdClient implements StatsdClient, Runnable {
+	private Strategy strategy = new InstantStrategy();
+
+	public void setStrategy(Strategy strategy){
+		this.strategy = strategy;
+		this.strategy.setTask(this);
+	}
+	
+	private BucketBuffer buffer = new BucketBuffer();
+
+	public void run(){
+		if (!this.buffer.isEmpty()){
+			Map<String, Bucket> dumpcellar = this.buffer.dump();
+			for (Bucket bucket : dumpcellar.values()){
+				this.doSend(bucket.toString());
+			}
+		}
+	}
 
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int)
@@ -28,9 +43,11 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int, java.lang.String)
 	 */
-	public boolean gauge(String bucket, int value, String message) {
-		String stat = buildMessage(bucket, value, "g", new Date().getTime(), message);
-		return send(stat, 1);
+	public synchronized boolean gauge(String bucketname, int value, String message){
+		GaugeBucket bucket = this.buffer.getBucket(bucketname, GaugeBucket.class);
+		bucket.infuse(value, message);
+		strategy.process();
+		return true;
 	}
 
 	/* (non-Javadoc)
@@ -43,9 +60,11 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#timing(java.lang.String, int, java.lang.String)
 	 */
-	public boolean timing(String bucket, int value, String message) {
-		String stat = buildMessage(bucket, value, "ms", 1, message);
-		return send(stat, 1);
+	public synchronized boolean timing(String bucketname, int value, String message){
+		TimerBucket bucket = this.buffer.getBucket(bucketname, TimerBucket.class);
+		bucket.infuse(value, message);
+		strategy.process();
+		return true;
 	}
 
 	/* (non-Javadoc)
@@ -82,50 +101,24 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	public boolean updateStats(int value, String message, double sampleRate, String... buckets){
 		boolean result = true;
 		for (int i = 0; i < buckets.length; i++) {
-			String stat = buildMessage(buckets[i], value, "c", sampleRate, message);
-			result = result && send(stat, sampleRate);
+			result = result && this.updateStats(buckets[i], value, sampleRate, message);
 		}
 		return result;
 	}
 
-	private String buildMessage(String bucket, int value, String type, double sampleRate, String message){
-		String field2 = "";
-		if (sampleRate < 1) {
-			field2 = String.format("@%f", sampleRate);
-		}
-		return buildMessage(bucket, value, type, field2, message);
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.IStatsdClient#updateStats(java.lang.String, int, double, java.lang.String)
+	 */
+	public synchronized boolean updateStats(String bucketname, int value, double sampleRate, String message){
+		CounterBucket bucket = this.buffer.getBucket(bucketname, CounterBucket.class);
+		bucket.infuse(value, sampleRate, message);
+		strategy.process();
+		return true;
 	}
 
-	private String buildMessage(String bucket, int value, String type, long timestamp, String message){
-		String field2 = String.valueOf(timestamp);
-		return buildMessage(bucket, value, type, field2, message);
-	}
-
-	private String buildMessage(String bucket, int value, String type, String field2, String message){
-		// bucket: field0 | field1 | field2                 | field3
-		// bucket: value  | type   | sampele_rate/timestamp | message
-		String stat = String.format("%s:%d|%s",  bucket, value, type);
-		// when message is there, we always keep field2 even if it's blank:
-		// bucket:2|c||some_message
-		if (message != null && !message.equals("")){
-			stat += String.format("|%s|%s", field2, message);
-		} else if (!field2.equals("")){
-			stat += String.format("|%s", field2);
-		}
-
-		return stat;
-	}
-
-	private boolean send(String stat, double sampleRate) {
-		if (sampleRate < 1.0 && RNG.nextDouble() > sampleRate) 
-			return false;
-		else {
-			return this.doSend(stat);
-		}
-	}
-	
 	/**
-	 * To write a customized client, all you need is to implement this method which sends the stats message to StatsD Server thru your own media.
+	 * To write a customized client, all you need is to implement this method which sends the stats
+	 *  message to StatsD Server thru your own media.
 	 * 
 	 * @param stat - the formatted message ready to send to the StatsD Server.
 	 * @return True if success, False otherwise.
