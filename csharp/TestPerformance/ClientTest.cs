@@ -25,7 +25,7 @@ namespace TestPerformance
         public bool Send(string message)
         {
             lastSent = message;
-            Debug.WriteLine(message);
+            Console.WriteLine(message);
             return true;
         }
     }
@@ -42,13 +42,12 @@ namespace TestPerformance
             this.bucketPrefix = bucketPrefix;
         }
 
-        public void ThreadPoolCallback(Object threadContext)
+        public void SendMessages(Object threadContext)
         {
             StatsdPipe statsd = new StatsdPipe();
-            statsd.Send = new TransportMock().Send;
-            GeyserStrategy stra = new GeyserStrategy();
-            stra.Interval = 0.5;
-            statsd.Strategy = stra;
+            statsd.Transport = new TransportMock();
+            statsd.Strategy = new GeyserStrategy(500);
+
             int threadIndex = (int)threadContext;
             for (int i = 0; i < 100; i++)
             {
@@ -70,12 +69,12 @@ namespace TestPerformance
 
         static void TestUnderPressure()
         {
+            Console.WriteLine("TestUnderPressure");
             StatsdPipe statsd = new StatsdPipe();
-            statsd.Send = new TransportMock().Send;
-            GeyserStrategy stra = new GeyserStrategy();
-            stra.Interval = 0.5;
-		    statsd.Strategy = stra;
-		    for (int i=0; i<10000; i++){
+            statsd.Transport = new TransportMock();
+            statsd.Strategy = new GeyserStrategy(500);
+
+		    for (int i=0; i<1000000; i++){
 			    DateTime start = DateTime.Now;
                 statsd.Increment(bucketPrefix + "pressure.multiple1");
                 int elapsedTimeMillis = Convert.ToInt32((DateTime.Now - start).TotalMilliseconds);
@@ -88,28 +87,25 @@ namespace TestPerformance
 
         static void TestMultiThreading()
         {
+            Console.WriteLine("TestMultiThreading");
             ManualResetEvent[] doneEvents = new ManualResetEvent[10];
             for (int i = 0; i < doneEvents.Length; i++)
             {
                 doneEvents[i] = new ManualResetEvent(false);
                 ThreadPoolStatsd tps = new ThreadPoolStatsd(doneEvents[i], bucketPrefix);
-                ThreadPool.QueueUserWorkItem(tps.ThreadPoolCallback, i);
+                ThreadPool.QueueUserWorkItem(tps.SendMessages, i);
             }
 
             WaitHandle.WaitAll(doneEvents);
         }
 
-        
-
         static void TestMailSlotStreaming()
         {
-            GeyserStrategy strategy = new GeyserStrategy();
-            strategy.Interval = 2000;
-
+            Console.WriteLine("TestMailSlotStreaming");
             StatsdPipe statsd = new StatsdPipe();
-            statsd.Strategy = strategy;
+            statsd.Strategy = new GeyserStrategy(20000);
 
-            for (int i=0; i<1000; i++)
+            for (int i=0; i<10000; i++)
             {
                 Thread.Sleep(r.Next(5));
                 statsd.Increment(bucketPrefix + "mailslot");
@@ -118,6 +114,7 @@ namespace TestPerformance
 
         static void ShowExample()
         {
+            Console.WriteLine("ShowExample");
             StatsdPipe statsd = new StatsdPipe();
 
             statsd.Gauge(bucketPrefix + "gauge", 500);
@@ -133,12 +130,24 @@ namespace TestPerformance
             statsd.UpdateCount("UpdateCount(string message, string key, int value)", 6, 1, bucketPrefix + "counter");
         }
 
+        static void TestBasic()
+        {
+            Console.WriteLine("TestBasic");
+            StatsdPipe sstdp = new StatsdPipe();
+            while (true)
+            {
+                Thread.Sleep(1000);
+                sstdp.Gauge("users.active", r.Next(35,55));
+            }
+        }
+
         static void Main(string[] args)
         {
             TestUnderPressure();
             TestMultiThreading();
             TestMailSlotStreaming();
             ShowExample();
+            TestBasic();
         }
     }
 }

@@ -18,12 +18,19 @@ namespace Statsd
     {
         private static readonly Random RAND = new Random();
 
-        private SendDelegate doSend = new SendDelegate(new AFTransport().Send);
+        private ITransport transport = new AFTransport();
 
-        public SendDelegate Send
+        public ITransport Transport
         {
-            get { return this.doSend; }
-            set { this.doSend = value; }
+            set
+            {
+                this.transport = value;
+            }
+        }
+
+        private SendDelegate Send
+        {
+            get { return new SendDelegate(this.transport.Send); }
         }
 
         private IStrategy strategy = new InstantStrategy();
@@ -49,7 +56,7 @@ namespace Statsd
 
         public bool Gauge(string message, string key, int value)
         {
-            return strategy.Emit<GaugeBucket>(this.doSend, key, value, message);
+            return strategy.Emit<GaugeBucket>(this.Send, key, value, message);
         }
 
         #endregion
@@ -64,7 +71,7 @@ namespace Statsd
 
         public bool Timing(string message, string key, int value)
         {
-            return strategy.Emit<TimerBucket>(this.doSend, key, value, message);
+            return strategy.Emit<TimerBucket>(this.Send, key, value, message);
         }
 
         #endregion
@@ -112,7 +119,7 @@ namespace Statsd
             bool retvalue = true;
             foreach (string key in keys)
             {
-                bool success = this.strategy.Emit<CounterBucket>(this.doSend, key, magnitude, message);
+                bool success = this.strategy.Emit<CounterBucket>(this.Send, key, magnitude, message);
                 retvalue &= success;
             }
             return retvalue;
@@ -120,7 +127,6 @@ namespace Statsd
         
         #endregion
     }
-
 
     public class GeyserStrategy : IStrategy
     {
@@ -131,14 +137,26 @@ namespace Statsd
 
         static GeyserStrategy()
         {
-            Process thisProcess = Process.GetCurrentProcess();
+            AppDomain domain = AppDomain.CurrentDomain;
+            domain.ProcessExit += new EventHandler(Flush);
+
             schedule.AutoReset = false;
-            thisProcess.Exited += new EventHandler(Flush);
             schedule.Elapsed += new ElapsedEventHandler(Flush);
         }
 
-        private static void Flush(object sender, System.EventArgs e)
+        public GeyserStrategy(){}
+
+        public GeyserStrategy(int interval)
         {
+            this.Interval = interval;
+        }
+
+        private static void Flush(object sender, EventArgs e)
+        {
+            if (schedule.Enabled)
+            {
+                schedule.Stop();
+            }
             if (!buffer.IsEmpty())
             {
                 Dictionary<String, IBucket> dumpcellar = buffer.Dump();
@@ -148,7 +166,7 @@ namespace Statsd
                 }
             }
         }
-        [MethodImpl(MethodImplOptions.Synchronized)]
+
         public bool Emit<T>(SendDelegate doSend, string bucketname, int value, string message) 
             where T : IBucket
         {

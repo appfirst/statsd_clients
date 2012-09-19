@@ -17,7 +17,7 @@ namespace Statsd
             set { this.name = value; }
         }
 
-        protected String CreateMessage(int value, String unit)
+        protected String GetStatsdString(int value, String unit)
         {
             String stat = null;
             if (message != null && message.Length>0)
@@ -47,7 +47,7 @@ namespace Statsd
 	    private int value = 0;
 
 	    public override String ToString(){
-		    return this.CreateMessage(this.value, "c");
+		    return this.GetStatsdString(this.value, "c");
 	    }
 
         public override void Infuse(int value, String message)
@@ -65,7 +65,7 @@ namespace Statsd
         public override String ToString()
         {
             int avg = this.sumstat / this.count;
-            return this.CreateMessage(avg, "ms");
+            return this.GetStatsdString(avg, "ms");
 	    }
 
         public override void Infuse(int value, String message)
@@ -82,13 +82,13 @@ namespace Statsd
 	    private int count = 0;
 	    private ulong timestamp;
 
-        public static readonly DateTime UNIX_EPOCH = new DateTime(1970, 1, 1).ToUniversalTime();
+        public static readonly DateTime UNIX_EPOCH = new DateTime(1970, 1, 1);
 
         public override String ToString()
         {
 		    int avg = this.sumstat/this.count;
             this.message.Insert(0, timestamp);
-            return this.CreateMessage(avg, "g");
+            return this.GetStatsdString(avg, "g");
 	    }
 
         public override void Infuse(int value, String message)
@@ -103,7 +103,7 @@ namespace Statsd
 
         public ulong UnixTimestampNow()
         {
-            return (ulong) (DateTime.UtcNow - UNIX_EPOCH).TotalSeconds;
+            return (ulong) (DateTime.Now - UNIX_EPOCH).TotalSeconds;
         }
     }
 

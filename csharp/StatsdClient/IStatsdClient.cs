@@ -10,16 +10,20 @@ namespace Statsd
 
     public interface IStatsdClient
     {
-        bool Gauge(string key, int value);
-        bool Gauge(string message, string key, int value);
-        bool Timing(string key, int value);
-        bool Timing(string message, string key, int value);
-        bool Decrement(params string[] keys);
-        bool Increment(params string[] keys);
-        bool UpdateCount(int magnitude, double sampleRate, params string[] keys);
-        bool UpdateCount(int magnitude, params string[] keys);
-        bool UpdateCount(string message, int magnitude, double sampleRate, params string[] keys);
-        bool UpdateCount(string message, int magnitude, params string[] keys);
+        bool Gauge(string bucketname, int value);
+        bool Gauge(string message, string bucketname, int value);
+        bool Timing(string bucketname, int elapse);
+        bool Timing(string message, string bucketname, int elapse);
+        bool Decrement(params string[] bucketnames);
+        bool Increment(params string[] bucketnames);
+        bool UpdateCount(int magnitude, double sampleRate, params string[] bucketnames);
+        bool UpdateCount(int magnitude, params string[] bucketnames);
+        bool UpdateCount(string message, int magnitude, double sampleRate, params string[] bucketnames);
+        bool UpdateCount(string message, int magnitude, params string[] bucketnames);
+    }
+
+    public interface IStrategicStatsd : IStatsdClient
+    { 
     }
 
     public interface ITransport
