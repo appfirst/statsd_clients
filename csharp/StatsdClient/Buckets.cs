@@ -9,7 +9,7 @@ namespace Statsd
     abstract class AbstractBucket : IBucket
     {
         protected String name;
-        protected StringBuilder message = null;
+        protected StringBuilder message = new StringBuilder();
 
         public String Name
         {
@@ -35,10 +35,6 @@ namespace Statsd
         {
             if (message != null && !message.Equals(""))
             {
-                if (this.message == null)
-                {
-                    this.message = new StringBuilder();
-                }
                 this.message.Append("|" + message);
             }
         }
@@ -90,11 +86,9 @@ namespace Statsd
 
         public override String ToString()
         {
-		    String stat = null;
 		    int avg = this.sumstat/this.count;
             this.message.Insert(0, timestamp);
-            this.CreateMessage(avg, "g");
-		    return stat;
+            return this.CreateMessage(avg, "g");
 	    }
 
         public override void Infuse(int value, String message)

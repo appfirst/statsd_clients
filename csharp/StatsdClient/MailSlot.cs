@@ -50,9 +50,9 @@ namespace Statsd
     {
         private static string SLOTNAME = @"\\.\mailslot\afcollectorapi";
 
-        private SafeFileHandle slotHandle = null;
+        private static SafeFileHandle slotHandle = null;
 
-        private FileStream fs = null;
+        private static FileStream fs = null;
 
         private FileStream mailSlot
         {
@@ -69,14 +69,14 @@ namespace Statsd
                             (uint)FileMode.Open,
                             (uint)FileAttributes.Normal,
                             0);
-                        if (!slotHandle.IsInvalid)
-                        {
-                            fs = new FileStream(slotHandle, FileAccess.Write);
-                        }
-                        else
-                        {
-                            throw new Exception();
-                        }
+                    }
+                    if (!slotHandle.IsInvalid)
+                    {
+                        fs = new FileStream(slotHandle, FileAccess.Write);
+                    }
+                    else
+                    {
+                        throw new Exception("MailSlot Handle is Invalid");
                     }
                 }
                 return fs;
@@ -87,7 +87,7 @@ namespace Statsd
         {
             get
             {
-                return fs != null;
+                return mailSlot != null;
             }
         }
 
@@ -102,10 +102,12 @@ namespace Statsd
 
                 mailSlot.Write(data_bytes, 0, byteCount);
                 mailSlot.Flush();
+
+                Debug.WriteLine("sending " + data_string);
             }
             catch (IOException ioe)
             {
-                Console.WriteLine("{0} Exception caught.", ioe);
+                Debug.WriteLine(String.Format("{0} Exception caught.", ioe));
             }
 
             return true;
@@ -139,12 +141,10 @@ namespace Statsd
             bool retval = false;
             if (usingCollector)
             {
-                Console.WriteLine("Sending with MailSlot");
                 retval = base.Send(message);
             }
             else
             {
-                Console.WriteLine("Sending with UDP");
                 retval = this.udpClient.Send(message);
             }
             return retval;

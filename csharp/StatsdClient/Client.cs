@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Timers;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 
 namespace Statsd
@@ -27,7 +28,7 @@ namespace Statsd
 
         private IStrategy strategy = new InstantStrategy();
 
-        private IStrategy Strategy
+        public IStrategy Strategy
         {
             set
             {
@@ -99,7 +100,7 @@ namespace Statsd
         {
             if (sampleRate < 1)
             {
-                if (RAND.NextDouble() < sampleRate)
+                if (RAND.NextDouble() > sampleRate)
                 {
                     return true;
                 }
@@ -121,50 +122,40 @@ namespace Statsd
     }
 
 
-    class GeyserStrategy : IStrategy
+    public class GeyserStrategy : IStrategy
     {
-        private BucketBuffer buffer = new BucketBuffer();
-        private Timer schedule = new Timer();
+        private static BucketBuffer buffer = new BucketBuffer();
+        private static Timer schedule = new Timer();
         public double Interval = 20000;
-        private SendDelegate doSend;
+        private static SendDelegate doSend;
 
-        public GeyserStrategy()
+        static GeyserStrategy()
         {
             Process thisProcess = Process.GetCurrentProcess();
-            thisProcess.Exited += new EventHandler(OnProcessExited);
+            schedule.AutoReset = false;
+            thisProcess.Exited += new EventHandler(Flush);
+            schedule.Elapsed += new ElapsedEventHandler(Flush);
         }
 
-        private void OnProcessExited(object sender, System.EventArgs e)
+        private static void Flush(object sender, System.EventArgs e)
         {
-            if (schedule.Enabled)
+            if (!buffer.IsEmpty())
             {
-                this.schedule.Enabled = false;
-            }
-            Flush(sender, e);
-        }
-
-        private void Flush(object sender, System.EventArgs e)
-        {
-            if (!this.buffer.IsEmpty())
-            {
-                Dictionary<String, IBucket> dumpcellar = this.buffer.Dump();
+                Dictionary<String, IBucket> dumpcellar = buffer.Dump();
                 foreach (IBucket bucket in dumpcellar.Values)
                 {
-                    this.doSend(bucket.ToString());
+                    doSend(bucket.ToString());
                 }
             }
         }
-
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Emit<T>(SendDelegate doSend, string bucketname, int value, string message) 
             where T : IBucket
         {
-            this.doSend = doSend;
+            GeyserStrategy.doSend = doSend;
             buffer.Accumulate<T>(bucketname, value, message);
             
-            // Hook up the Elapsed event for the timer.
-            this.schedule.Elapsed += new ElapsedEventHandler(this.Flush);
-
-            if (!this.schedule.Enabled)
+            if (!schedule.Enabled)
             {
                 schedule.Interval = this.Interval;
                 schedule.Start();
@@ -174,7 +165,7 @@ namespace Statsd
         }
     }
 
-    class InstantStrategy : IStrategy
+    public class InstantStrategy : IStrategy
     {
         public bool Emit<T>(SendDelegate doSend, string bucketname, int value, string message) 
             where T : IBucket
