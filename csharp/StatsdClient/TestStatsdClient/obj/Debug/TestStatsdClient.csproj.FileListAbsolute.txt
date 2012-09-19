@@ -1,0 +1,7 @@
+C:\git\statsd_clients\csharp\StatsdClient\TestStatsdClient\bin\Debug\TestStatsdClient.dll
+C:\git\statsd_clients\csharp\StatsdClient\TestStatsdClient\bin\Debug\TestStatsdClient.pdb
+C:\git\statsd_clients\csharp\StatsdClient\TestStatsdClient\bin\Debug\StatsdClient.pdb
+C:\git\statsd_clients\csharp\StatsdClient\TestStatsdClient\obj\Debug\ResolveAssemblyReference.cache
+C:\git\statsd_clients\csharp\StatsdClient\TestStatsdClient\obj\Debug\TestStatsdClient.dll
+C:\git\statsd_clients\csharp\StatsdClient\TestStatsdClient\obj\Debug\TestStatsdClient.pdb
+C:\git\statsd_clients\csharp\StatsdClient\TestStatsdClient\bin\Debug\StatsdClient.dll
