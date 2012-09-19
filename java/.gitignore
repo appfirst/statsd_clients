@@ -9,7 +9,9 @@
 manifest.mf
 target/classes/
 target/test-classes/
+target/surefire-reports/
 .classpath
 .project
 .settings/
 .externalToolBuilders/
+src/test/java/com/appfirst/statsd/test/TestSynchronized.java
