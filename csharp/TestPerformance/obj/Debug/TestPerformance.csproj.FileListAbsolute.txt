@@ -1,7 +1,0 @@
-C:\git\statsd_clients\csharp\TestPerformance\obj\Debug\ResolveAssemblyReference.cache
-C:\git\statsd_clients\csharp\TestPerformance\bin\Debug\TestPerformance.exe
-C:\git\statsd_clients\csharp\TestPerformance\bin\Debug\TestPerformance.pdb
-C:\git\statsd_clients\csharp\TestPerformance\bin\Debug\StatsdClient.dll
-C:\git\statsd_clients\csharp\TestPerformance\bin\Debug\StatsdClient.pdb
-C:\git\statsd_clients\csharp\TestPerformance\obj\Debug\TestPerformance.exe
-C:\git\statsd_clients\csharp\TestPerformance\obj\Debug\TestPerformance.pdb

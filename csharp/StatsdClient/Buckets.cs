@@ -6,6 +6,29 @@ using System.Runtime.CompilerServices;
 
 namespace Statsd
 {
+    public static class TimestampHelper
+    {
+        public static readonly DateTime UNIX_EPOCH = new DateTime(1970, 1, 1);
+
+        public static ulong Now
+        {
+            get
+            {
+                return Timestamp(DateTime.UtcNow);
+            }
+        }
+
+        public static ulong Timestamp(DateTime dt)
+        {
+            return (ulong)(dt - UNIX_EPOCH).TotalSeconds;
+        }
+
+        public static DateTime ConvertToDateTime(ulong timestamp)
+        {
+            return UNIX_EPOCH.AddSeconds(timestamp);
+        }
+    }
+
     abstract class AbstractBucket : IBucket
     {
         protected String name;
@@ -64,7 +87,7 @@ namespace Statsd
 
         public override String ToString()
         {
-            int avg = this.sumstat / this.count;
+            int avg = Convert.ToInt32(this.sumstat / this.count);
             return this.GetStatsdString(avg, "ms");
 	    }
 
@@ -82,11 +105,9 @@ namespace Statsd
 	    private int count = 0;
 	    private ulong timestamp;
 
-        public static readonly DateTime UNIX_EPOCH = new DateTime(1970, 1, 1);
-
         public override String ToString()
         {
-		    int avg = this.sumstat/this.count;
+            int avg = Convert.ToInt32(this.sumstat / this.count);
             this.message.Insert(0, timestamp);
             return this.GetStatsdString(avg, "g");
 	    }
@@ -98,13 +119,8 @@ namespace Statsd
             this.AddMessage(message);
 
 
-            this.timestamp = this.UnixTimestampNow();
+            this.timestamp = TimestampHelper.Now;
 	    }
-
-        public ulong UnixTimestampNow()
-        {
-            return (ulong) (DateTime.Now - UNIX_EPOCH).TotalSeconds;
-        }
     }
 
     class BucketBuffer {

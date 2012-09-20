@@ -133,12 +133,18 @@ namespace TestPerformance
         static void TestBasic()
         {
             Console.WriteLine("TestBasic");
-            StatsdPipe sstdp = new StatsdPipe();
+            StatsdPipe statsd = new StatsdPipe();
             while (true)
             {
                 Thread.Sleep(1000);
-                sstdp.Gauge("users.active", r.Next(35,55));
+                statsd.Increment(bucketPrefix + "basictest");
             }
+        }
+
+        static void TestTimeStamp()
+        {
+            Debug.WriteLine(TimestampHelper.Now);
+            Debug.WriteLine(TimestampHelper.ConvertToDateTime(TimestampHelper.Now));
         }
 
         static void Main(string[] args)
