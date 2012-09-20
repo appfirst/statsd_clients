@@ -74,6 +74,16 @@ namespace TestPerformance
             statsd.Transport = new TransportMock();
             statsd.Strategy = new GeyserStrategy(500);
 
+            statsd.Increment(bucketPrefix + "pressure.multiple1");
+            try
+            {
+                statsd.Gauge(bucketPrefix + "pressure.multiple1",1 );
+            }
+            catch (BucketTypeMismatchException btme)
+            {
+                Console.WriteLine(btme.Message);
+            }
+
 		    for (int i=0; i<1000000; i++){
 			    DateTime start = DateTime.Now;
                 statsd.Increment(bucketPrefix + "pressure.multiple1");
@@ -103,12 +113,18 @@ namespace TestPerformance
         {
             Console.WriteLine("TestMailSlotStreaming");
             StatsdPipe statsd = new StatsdPipe();
-            statsd.Strategy = new GeyserStrategy(20000);
+            statsd.Strategy = new GeyserStrategy(2000);
 
-            for (int i=0; i<10000; i++)
+            for (int i=0; i<10; i++)
             {
-                Thread.Sleep(r.Next(5));
-                statsd.Increment(bucketPrefix + "mailslot");
+                //Thread.Sleep(r.Next(5));
+                Thread.Sleep(1000);
+                statsd.Timing(bucketPrefix + "newmailslot.timer", 16);
+                statsd.Gauge(bucketPrefix + "newmailslot.gauge", 8);
+                statsd.UpdateCount(4, bucketPrefix + "newmailslot.counter");
+                statsd.UpdateCount(2, bucketPrefix + "newmailslot.counter");
+                statsd.Increment(bucketPrefix + "newmailslot.counter");
+                statsd.Decrement(bucketPrefix + "newmailslot.counter");
             }
         }
 
@@ -153,7 +169,7 @@ namespace TestPerformance
             TestMultiThreading();
             TestMailSlotStreaming();
             ShowExample();
-            TestBasic();
+            //TestBasic();
         }
     }
 }

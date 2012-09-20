@@ -135,7 +135,8 @@ namespace Statsd
         public void Accumulate<T>(String bucketname, int value, string message)
             where T : IBucket
         {
-		    T bucket = default(T);
+            Type buckettype = typeof(T);
+            T bucket = default(T);
             if (cellar.ContainsKey(bucketname))
             {
                 IBucket rawbucket;
@@ -147,12 +148,17 @@ namespace Statsd
                 }
                 else
                 {
-                    throw new Exception();
+                    string exMessage = String.Format(
+                        "{0} for name {1} is not matching {2} which was sent before",
+                        buckettype,
+                        rawbucket.Name,
+                        rawbucket.GetType());
+                    throw new BucketTypeMismatchException(exMessage);
                 }
             }
             else
             {
-                bucket = (T) Activator.CreateInstance(typeof(T));
+                bucket = (T)Activator.CreateInstance(buckettype);
                 bucket.Name = bucketname;
                 cellar.Add(bucketname, bucket);
             }
@@ -166,5 +172,17 @@ namespace Statsd
             cellar = new Dictionary<String, IBucket>();
 		    return dumpcellar;
 	    }
+    }
+
+    public class BucketTypeMismatchException : Exception
+    {
+        public BucketTypeMismatchException()
+        {
+        }
+
+        public BucketTypeMismatchException(string message)
+            : base(message)
+        {
+        }
     }
 }

@@ -103,7 +103,7 @@ namespace Statsd
                 mailSlot.Write(data_bytes, 0, byteCount);
                 mailSlot.Flush();
 
-                Debug.WriteLine("sending " + data_string);
+                Console.WriteLine("sending " + data_string);
             }
             catch (IOException ioe)
             {

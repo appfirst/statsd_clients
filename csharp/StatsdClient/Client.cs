@@ -167,6 +167,7 @@ namespace Statsd
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Emit<T>(SendDelegate doSend, string bucketname, int value, string message) 
             where T : IBucket
         {
