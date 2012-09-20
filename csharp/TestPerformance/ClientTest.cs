@@ -128,11 +128,8 @@ namespace TestPerformance
             }
         }
 
-        static void ShowExample()
+        static void ShowExample(IStatsdClient statsd)
         {
-            Console.WriteLine("ShowExample");
-            StatsdPipe statsd = new StatsdPipe();
-
             statsd.Gauge(bucketPrefix + "gauge", 500);
             statsd.Gauge("Gauge(string message, string key, int value)", bucketPrefix + "gauge", 500);
             statsd.Timing(bucketPrefix + "timer", 500);
@@ -150,10 +147,12 @@ namespace TestPerformance
         {
             Console.WriteLine("TestBasic");
             StatsdPipe statsd = new StatsdPipe();
+            statsd.Strategy = new GeyserStrategy(5000);
             while (true)
             {
                 Thread.Sleep(1000);
-                statsd.Increment(bucketPrefix + "basictest");
+
+                ShowExample(statsd);
             }
         }
 
@@ -165,11 +164,11 @@ namespace TestPerformance
 
         static void Main(string[] args)
         {
-            TestUnderPressure();
-            TestMultiThreading();
-            TestMailSlotStreaming();
-            ShowExample();
-            //TestBasic();
+            //TestUnderPressure();
+            //TestMultiThreading();
+            //TestMailSlotStreaming();
+            //ShowExample(StatsdPipe statsd = new StatsdPipe());
+            TestBasic();
         }
     }
 }
