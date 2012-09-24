@@ -31,8 +31,16 @@ namespace Statsd
 
     abstract class AbstractBucket : IBucket
     {
-        protected String name;
-        protected StringBuilder message = new StringBuilder();
+        private String name;
+
+        private HashSet<string> msgSet = new HashSet<string>();
+
+        private string field2 = null;
+
+        public String Field2
+        {
+            set { this.field2 = value; }
+        }
 
         public String Name
         {
@@ -42,23 +50,29 @@ namespace Statsd
 
         protected String GetStatsdString(int value, String unit)
         {
-            String stat = null;
-            if (message != null && message.Length>0)
+            StringBuilder stat = new StringBuilder(
+                String.Format("{0}:{1:d}|{2}", name, value, unit));
+            if (this.msgSet.Count > 0 || field2 != null)
             {
-                stat = String.Format("{0}:{1:d}|{2}|{3}", name, value, unit, message.ToString());
+                stat.Append("|");
             }
-            else
+            if (field2 != null)
             {
-                stat = String.Format("{0}:{1:d}|{2}", name, value, unit);
+                stat.Append(field2);
             }
-            return stat;
+            foreach (string msg in this.msgSet)
+            {
+                stat.Append("|");
+                stat.Append(msg);
+            }
+            return stat.ToString();
         }
 
         protected void AddMessage(String message)
         {
             if (message != null && !message.Equals(""))
             {
-                this.message.Append("|" + message);
+                this.msgSet.Add(message);
             }
         }
 
@@ -108,7 +122,7 @@ namespace Statsd
         public override String ToString()
         {
             int avg = Convert.ToInt32(this.sumstat / this.count);
-            this.message.Insert(0, timestamp);
+            this.Field2 = Convert.ToString(timestamp);
             return this.GetStatsdString(avg, "g");
 	    }
 
@@ -117,7 +131,6 @@ namespace Statsd
 		    this.sumstat += value;
             this.count++;
             this.AddMessage(message);
-
 
             this.timestamp = TimestampHelper.Now;
 	    }
@@ -176,13 +189,8 @@ namespace Statsd
 
     public class BucketTypeMismatchException : Exception
     {
-        public BucketTypeMismatchException()
-        {
-        }
-
+        public BucketTypeMismatchException(){}
         public BucketTypeMismatchException(string message)
-            : base(message)
-        {
-        }
+            : base(message){}
     }
 }

@@ -164,10 +164,10 @@ namespace TestPerformance
 
         static void Main(string[] args)
         {
-            //TestUnderPressure();
-            //TestMultiThreading();
-            //TestMailSlotStreaming();
-            //ShowExample(StatsdPipe statsd = new StatsdPipe());
+            TestUnderPressure();
+            TestMultiThreading();
+            TestMailSlotStreaming();
+            ShowExample(new StatsdPipe());
             TestBasic();
         }
     }
