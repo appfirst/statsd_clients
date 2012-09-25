@@ -131,16 +131,16 @@ namespace TestPerformance
         static void ShowExample(IStatsdClient statsd)
         {
             statsd.Gauge(bucketPrefix + "gauge", 500);
-            statsd.Gauge("Gauge(string message, string key, int value)", bucketPrefix + "gauge", 500);
+            statsd.Gauge("test|Gauge(string message, string key, int value)", bucketPrefix + "gauge", 500);
             statsd.Timing(bucketPrefix + "timer", 500);
-            statsd.Timing("Timer(string message, string key, int value)", bucketPrefix + "timer", 500);
+            statsd.Timing("test|Timer(string message, string key, int value)", bucketPrefix + "timer", 500);
             statsd.Increment(bucketPrefix + "counter");
             statsd.Decrement(bucketPrefix + "counter");
             statsd.UpdateCount(2, bucketPrefix + "counter");
             statsd.UpdateCount(3, 0, bucketPrefix + "counter", bucketPrefix + "counter2");
             statsd.UpdateCount(4, 2, bucketPrefix + "counter", bucketPrefix + "counter2");
-            statsd.UpdateCount("UpdateCount(string message, string key, int value)", 5, bucketPrefix + "counter", bucketPrefix + "counter2");
-            statsd.UpdateCount("UpdateCount(string message, string key, int value)", 6, 1, bucketPrefix + "counter");
+            statsd.UpdateCount("test|UpdateCount(string message, string key, int value)", 5, bucketPrefix + "counter", bucketPrefix + "counter2");
+            statsd.UpdateCount("UpdateCount(string message, string key, int value)|test", 6, 1, bucketPrefix + "counter");
         }
 
         static void TestBasic()

@@ -64,7 +64,7 @@ namespace Statsd
                     {
                         slotHandle = NativeMailSlot.CreateFile(SLOTNAME,
                             (uint)FileAccess.Write,
-                            (uint)FileShare.Read,
+                            (uint)FileShare.ReadWrite,
                             0,
                             (uint)FileMode.Open,
                             (uint)FileAttributes.Normal,
@@ -115,7 +115,7 @@ namespace Statsd
 
         #region IDisposable Members
 
-        public void Dispose()
+        public void Close()
         {
             if (fs != null)
             {
@@ -126,6 +126,11 @@ namespace Statsd
             {
                 slotHandle.Close();
             }
+        }
+
+        public void Dispose()
+        {
+            this.Close();
         }
 
         #endregion

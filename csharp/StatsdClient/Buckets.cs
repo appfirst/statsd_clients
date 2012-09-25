@@ -72,7 +72,11 @@ namespace Statsd
         {
             if (message != null && !message.Equals(""))
             {
-                this.msgSet.Add(message);
+                string[] submsgs = message.Split('|');
+                foreach (string sub in submsgs)
+                {
+                    this.msgSet.Add(sub);
+                }
             }
         }
 
