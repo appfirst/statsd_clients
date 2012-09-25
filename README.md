@@ -1,5 +1,9 @@
 This is the library of clients for both Etsy-standard StatsD and AppFirst-extended StatsD+
 
+Design of AppFirst Statsd
+====================================
+please see the document [here](https://appfirst.fogbugz.com/default.asp?w423)
+
 StatsD Example Clients
 ======================
 
