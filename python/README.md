@@ -1,4 +1,8 @@
 ![Appfirst](http://www.appfirst.com/img/appfirst-logo.png)
+
+Design of AppFirst Statsd [AppFirst](https://appfirst.fogbugz.com/default.asp?W423)
+====================================
+
 Statsd Python Clients by [AppFirst](http://www.appfirst.com)
 ====================================
 
