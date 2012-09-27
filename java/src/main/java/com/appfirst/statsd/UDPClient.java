@@ -15,7 +15,7 @@ import org.apache.log4j.Logger;
  * @author Yangming Huang
  *
  */
-public class UDPClient extends AbstractStatsdClient implements StatsdClient{
+public class UDPClient extends AbstractStatsdClient implements StatsdClient, Transport{
 	public static int DEFAULT_STATSD_PORT = 8125;
 	private static Logger log = Logger.getLogger(UDPClient.class);
 
@@ -57,9 +57,10 @@ public class UDPClient extends AbstractStatsdClient implements StatsdClient{
 	}
 
 	/* (non-Javadoc)
-	 * @see com.appfirst.statsd.AbstractStatsdClient#doSend(java.lang.String)
+	 * @see com.appfirst.statsd.Transport#doSend(java.lang.String)
 	 */
-	protected final boolean doSend(final String stat) {
+	@Override
+	public final boolean doSend(final String stat) {
 		log.info(String.format("Sending stat: %s", stat));
 		try {
 			final byte[] data = stat.getBytes("utf-8");
@@ -81,5 +82,10 @@ public class UDPClient extends AbstractStatsdClient implements StatsdClient{
 							_address.getPort()), e);
 			return false;
 		}
+	}
+
+	@Override
+	protected Transport getTransport() {
+		return this;
 	}
 }

@@ -16,24 +16,17 @@ import com.sun.jna.Native;
  * @author Yangming Huang
  *
  */
-public class AFClient extends AbstractStatsdClient {
-	static Logger log = Logger.getLogger(AFClient.class);
+class AFTransport implements Transport {
+	static Logger log = Logger.getLogger(AFTransport.class);
 
 	private static String AFCAPIName = "/afcollectorapi";
 	private static String LibName = "rt";
 	private static int FLAG = 04001;
 	private static int AFCMaxMsgSize = 2048;
 	private static int AFCSeverityStatsd = 3;
-	
+
 	private int mqd = -1;
 	private MQ mqlib = null;
-
-	/**
-	 * Default Constructor. Initialize AFClient.
-	 */
-	public AFClient() {
-		this.setStrategy(new GeyserStrategy(20));
-	}
 
 	private UDPClient _udpClient = null;
 
@@ -60,9 +53,10 @@ public class AFClient extends AbstractStatsdClient {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.appfirst.statsd.AbstractStatsdClient#doSend(java.lang.String)
+	 * @see com.appfirst.statsd.Transport#doSend(java.lang.String)
 	 */
-	protected final boolean doSend(final String stat) {
+	@Override
+	public final boolean doSend(final String stat) {
 		// trim msg if over allowed size
 		String msg = (stat.length() > AFCMaxMsgSize) ? stat.substring(0, AFCMaxMsgSize) : stat;
 
@@ -149,6 +143,24 @@ public class AFClient extends AbstractStatsdClient {
 			return result==null ? AFCReturnCode.AFCSuccess : result;
 		}
 	}
+}
+
+
+/**
+ * @author appfirst
+ * Convenient Proxy for StatsdClient using AFTransport and GeyserStrategy()
+ */
+public class AFClient extends AbstractStatsdClient{
+	static Logger log = Logger.getLogger(AFClient.class);
+	
+	private final Transport transport = new AFTransport();
+
+	/**
+	 * Default Constructor. Initialize AFClient.
+	 */
+	public AFClient() {
+		this.setStrategy(new StrategyFactory().getGeyserStrategy());
+	}
 
 	/**
 	 * This main function only intends to send some basic messages for testing.
@@ -158,12 +170,17 @@ public class AFClient extends AbstractStatsdClient {
 	public static void main(String[] args){
 		BasicConfigurator.configure();
 		StatsdClient client = new AFClient();
-		client.gauge("test.java.gauge", 1);
-		client.increment("test.java.counter");
-		client.decrement("test.java.counter");
-		client.updateStats(2, null, .5, "test.java.counter", "test.java.counter2");
-		client.updateStats(-1, null, 1, "test.java.counter");
-		client.timing("test.java.timing", 500);
-		client.timing("test.java.timing", 488, "hello");
+		client.gauge("java.test.gauge", 1);
+		client.increment("java.test.counter");
+		client.decrement("java.test.counter");
+		client.updateStats(2, null, .5, "java.test.counter", "java.test.counter2");
+		client.updateStats(-1, null, 1, "java.test.counter");
+		client.timing("java.test.timing", 500);
+		client.timing("java.test.timing", 488, "hello");
+	}
+
+	@Override
+	protected Transport getTransport() {
+		return transport;
 	}
 }

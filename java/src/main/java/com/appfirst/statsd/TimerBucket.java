@@ -28,7 +28,8 @@ public class TimerBucket implements Bucket{
 		return stat;
 	}
 
-	public TimerBucket infuse(int value, String message){
+	@Override
+	public void infuse(int value, String message){
 		this.sumstat += value;
 		this.count++;
 		if (message != null && !message.equals("")){
@@ -38,6 +39,6 @@ public class TimerBucket implements Bucket{
 				this.message = message;
 			}
 		}
-		return this;
 	}
+
 }

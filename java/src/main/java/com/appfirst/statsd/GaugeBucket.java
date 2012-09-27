@@ -31,7 +31,8 @@ public class GaugeBucket implements Bucket {
 		return stat;
 	}
 
-	public GaugeBucket infuse(int value, String message){
+	@Override
+	public void infuse(int value, String message){
 		this.sumstat += value;
 		this.count++;
 		if (message != null && !message.equals("")){
@@ -42,6 +43,5 @@ public class GaugeBucket implements Bucket {
 			}
 		}
 		this.timestamp = new Date().getTime();
-		return this;
 	}
 }

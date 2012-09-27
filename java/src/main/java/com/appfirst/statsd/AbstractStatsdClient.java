@@ -1,5 +1,6 @@
 package com.appfirst.statsd;
-import java.util.Map;
+import java.util.Random;
+
 
 /**
  * The Skeleton class of Java Statsd Client with AppFirst Extension.
@@ -14,23 +15,32 @@ import java.util.Map;
  * 
  * @author Yangming Huang @leonmax
  */
-public abstract class AbstractStatsdClient implements StatsdClient, Runnable {
-	private Strategy strategy = new InstantStrategy();
+public abstract class AbstractStatsdClient implements StatsdClient {
+	private Strategy strategy = null;
 
-	public void setStrategy(Strategy strategy){
+	protected Class<? extends Strategy> defaultStrategyClass = InstantStrategy.class;
+
+	private final static Random RNG = new Random();
+
+	public StatsdClient setStrategy(Strategy strategy){
 		this.strategy = strategy;
-		this.strategy.setTask(this);
+		this.strategy.setTransport(this.getTransport());
+		// for chaining purpose
+		return this;
 	}
-	
-	private BucketBuffer buffer = new BucketBuffer();
 
-	public void run(){
-		if (!this.buffer.isEmpty()){
-			Map<String, Bucket> dumpcellar = this.buffer.dump();
-			for (Bucket bucket : dumpcellar.values()){
-				this.doSend(bucket.toString());
+	public Strategy getStrategy(){
+		if (strategy == null){
+			try {
+				this.strategy = defaultStrategyClass.newInstance();
+			} catch (InstantiationException e) {
+				this.strategy = new InstantStrategy();
+			} catch (IllegalAccessException e) {
+				this.strategy = new InstantStrategy();
 			}
+			this.strategy.setTransport(this.getTransport());
 		}
+		return this.strategy;
 	}
 
 	/* (non-Javadoc)
@@ -43,11 +53,8 @@ public abstract class AbstractStatsdClient implements StatsdClient, Runnable {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int, java.lang.String)
 	 */
-	public synchronized boolean gauge(String bucketname, int value, String message){
-		GaugeBucket bucket = this.buffer.getBucket(bucketname, GaugeBucket.class);
-		bucket.infuse(value, message);
-		strategy.process();
-		return true;
+	public boolean gauge(String bucketname, int value, String message){
+		return strategy.emit(GaugeBucket.class, bucketname, value, message);
 	}
 
 	/* (non-Javadoc)
@@ -60,11 +67,8 @@ public abstract class AbstractStatsdClient implements StatsdClient, Runnable {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#timing(java.lang.String, int, java.lang.String)
 	 */
-	public synchronized boolean timing(String bucketname, int value, String message){
-		TimerBucket bucket = this.buffer.getBucket(bucketname, TimerBucket.class);
-		bucket.infuse(value, message);
-		strategy.process();
-		return true;
+	public boolean timing(String bucketname, int value, String message){
+		return strategy.emit(TimerBucket.class, bucketname, value, message);
 	}
 
 	/* (non-Javadoc)
@@ -109,19 +113,12 @@ public abstract class AbstractStatsdClient implements StatsdClient, Runnable {
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#updateStats(java.lang.String, int, double, java.lang.String)
 	 */
-	public synchronized boolean updateStats(String bucketname, int value, double sampleRate, String message){
-		CounterBucket bucket = this.buffer.getBucket(bucketname, CounterBucket.class);
-		bucket.infuse(value, sampleRate, message);
-		strategy.process();
-		return true;
+	public boolean updateStats(String bucketname, int value, double sampleRate, String message){
+		if (sampleRate < 1.0 && RNG.nextDouble() > sampleRate) 
+			return true;
+		value /= sampleRate;
+		return strategy.emit(CounterBucket.class, bucketname, value, message);
 	}
 
-	/**
-	 * To write a customized client, all you need is to implement this method which sends the stats
-	 *  message to StatsD Server thru your own media.
-	 * 
-	 * @param stat - the formatted message ready to send to the StatsD Server.
-	 * @return True if success, False otherwise.
-	 */
-	protected abstract boolean doSend(final String stat);
+	protected abstract Transport getTransport();
 }
