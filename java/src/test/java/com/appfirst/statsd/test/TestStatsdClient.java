@@ -5,14 +5,22 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import com.appfirst.statsd.GeyserStrategy;
+import com.appfirst.statsd.AbstractStatsdClient;
+import com.appfirst.statsd.StatsdClient;
+import com.appfirst.statsd.Transport;
 import com.appfirst.statsd.UDPClient;
+import com.appfirst.statsd.strategy.StrategyFactory;
 
 public class TestStatsdClient {
+	static Logger log = Logger.getLogger(TestStatsdClient.class);
 
 	@Test
 	public final void testSetStrategy() {
@@ -89,7 +97,7 @@ public class TestStatsdClient {
 		BasicConfigurator.configure();
 //		StatsdClient client = new AFClient();
 		UDPClient client = new UDPClient();
-		client.setStrategy(new GeyserStrategy(2));
+		client.setStrategy(new StrategyFactory().getGeyserStrategy(2));
 		Random r = new Random();
 		for (int i=0; i<1000; i++){
 			Thread.sleep(r.nextInt(5));
@@ -103,4 +111,53 @@ public class TestStatsdClient {
 		}
 	}
 
+	class GeysertStrategyRunner implements Runnable{
+		private StatsdClient client = null;
+		private int times = 1;
+		private long sendInterval = 1;
+		
+		GeysertStrategyRunner(int times, long sendInterval, int flushInterval){
+			this.client = new AbstractStatsdClient(){
+				@Override
+				protected Transport getTransport() {
+					return new Transport(){
+							@Override
+							public boolean doSend(String stat) {
+								log.info(String.format("sending %s",stat));
+								return false;
+							};
+					};
+				}
+			}.setStrategy(new StrategyFactory().getGeyserStrategy(flushInterval));
+			this.times = times;
+			this.sendInterval = sendInterval;
+		}
+		
+		public void run(){
+			for (int i=0; i<times; i++){
+				if (sendInterval > 0){
+					try {
+						Thread.sleep(sendInterval);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+				client.increment("multiple1");
+			}
+		}
+	}
+
+	@Test
+	public final void testMultithreading() throws UnknownHostException, IOException, InterruptedException {
+		BasicConfigurator.configure();
+		ExecutorService executor = Executors.newFixedThreadPool(10);
+		
+		for (int i=0; i<10; i++){
+			executor.execute(new GeysertStrategyRunner(100000000, 0, 2));
+		}
+		
+		
+		
+		executor.awaitTermination(10, TimeUnit.SECONDS);
+	}
 }
