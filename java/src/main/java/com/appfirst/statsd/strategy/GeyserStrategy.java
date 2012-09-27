@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import com.appfirst.statsd.Transport;
 import com.appfirst.statsd.bucket.Bucket;
+import com.appfirst.statsd.transport.Transport;
 
 public final class GeyserStrategy implements Strategy{
 	static Logger log = Logger.getLogger(GeyserStrategy.class);
@@ -24,6 +24,8 @@ public final class GeyserStrategy implements Strategy{
 	private ScheduledFuture<?> progress;
 	private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
+	private BucketBuffer buffer = new BucketBuffer();
+
 	private void initialize(){
 		Runtime.getRuntime().addShutdownHook(new Thread(){
 			@Override
@@ -32,10 +34,10 @@ public final class GeyserStrategy implements Strategy{
 				if (!executor.isShutdown()){
 					executor.shutdown();
 					try {
-						if (!executor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) { //optional *
-							log.warn("Executor did not terminate in the specified time."); //optional *
-							List<Runnable> droppedTasks = executor.shutdownNow(); //optional **
-							log.warn("Executor was abruptly shut down. " + droppedTasks.size() + " tasks will not be executed."); //optional **
+						if (!executor.awaitTermination(SHUTDOWN_TIME, unit)) {
+							log.warn("Executor did not terminate in the specified time.");
+							List<Runnable> droppedTasks = executor.shutdownNow();
+							log.warn("Executor was abruptly shut down. " + droppedTasks.size() + " tasks will not be executed.");
 						}
 					} catch (InterruptedException e) {
 						e.printStackTrace();
@@ -46,8 +48,8 @@ public final class GeyserStrategy implements Strategy{
 		});
 	}
 
-	public void setTransport(Transport _transport){
-		transport = _transport;
+	public void setTransport(Transport transport){
+		this.transport = transport;
 	}
 
 	public void setInterval(int interval){
@@ -58,17 +60,26 @@ public final class GeyserStrategy implements Strategy{
 		this.unit = unit;
 	}
 
-	private BucketBuffer buffer = new BucketBuffer();
-
-	public <T extends Bucket> boolean emit(
+	public <T extends Bucket> boolean send(
 			Class<T> clazz,
 			String bucketname,
 			int value,
 			String message){
-		buffer.brew(clazz, bucketname, value, message);
+		try {
+			buffer.deposit(clazz, bucketname, value, message);
+		} catch (BucketTypeMismatchException e) {
+			e.printStackTrace();
+			return false;
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+			return false;
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+			return false;
+		}
 		synchronized(executor){
 			if (!(executor.isShutdown() || executor.isTerminated()) 
-				&& (progress.isDone() || progress == null)){
+				&& (progress == null || progress.isDone())){
 
 				log.info("scheduling execution");
 				progress = executor.schedule(new Runnable() {
@@ -81,7 +92,7 @@ public final class GeyserStrategy implements Strategy{
 
 	private void flush(){
 		if (!buffer.isEmpty()){
-			Map<String, Bucket> dumpcellar = buffer.dump();
+			Map<String, Bucket> dumpcellar = buffer.withdraw();
 			for (Bucket bucket : dumpcellar.values()){
 				transport.doSend(bucket.toString());
 			}

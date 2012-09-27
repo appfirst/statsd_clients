@@ -1,4 +1,6 @@
 package com.appfirst.statsd;
+import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Random;
 
 import com.appfirst.statsd.bucket.CounterBucket;
@@ -6,6 +8,8 @@ import com.appfirst.statsd.bucket.GaugeBucket;
 import com.appfirst.statsd.bucket.TimerBucket;
 import com.appfirst.statsd.strategy.InstantStrategy;
 import com.appfirst.statsd.strategy.Strategy;
+import com.appfirst.statsd.transport.Transport;
+import com.appfirst.statsd.transport.UdpTransport;
 
 
 /**
@@ -21,10 +25,12 @@ import com.appfirst.statsd.strategy.Strategy;
  * 
  * @author Yangming Huang @leonmax
  */
-public abstract class AbstractStatsdClient implements StatsdClient {
+public class DefaultStatsdClient implements StatsdClient {
 	private Strategy strategy = null;
+	private Transport transport = null;
 
-	protected Class<? extends Strategy> defaultStrategyClass = InstantStrategy.class;
+	private Class<? extends Strategy> defaultStrategyClass = InstantStrategy.class;
+	private Class<? extends Transport> defaultTransportClass = UdpTransport.class;
 
 	private final static Random RNG = new Random();
 
@@ -60,7 +66,7 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int, java.lang.String)
 	 */
 	public boolean gauge(String bucketname, int value, String message){
-		return strategy.emit(GaugeBucket.class, bucketname, value, message);
+		return strategy.send(GaugeBucket.class, bucketname, value, message);
 	}
 
 	/* (non-Javadoc)
@@ -74,7 +80,7 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 	 * @see com.appfirst.statsd.IStatsdClient#timing(java.lang.String, int, java.lang.String)
 	 */
 	public boolean timing(String bucketname, int value, String message){
-		return strategy.emit(TimerBucket.class, bucketname, value, message);
+		return strategy.send(TimerBucket.class, bucketname, value, message);
 	}
 
 	/* (non-Javadoc)
@@ -123,8 +129,27 @@ public abstract class AbstractStatsdClient implements StatsdClient {
 		if (sampleRate < 1.0 && RNG.nextDouble() > sampleRate) 
 			return true;
 		value /= sampleRate;
-		return strategy.emit(CounterBucket.class, bucketname, value, message);
+		return strategy.send(CounterBucket.class, bucketname, value, message);
 	}
 
-	protected abstract Transport getTransport();
+	protected Transport getTransport(){
+		if (transport == null){
+			try {
+				this.transport = defaultTransportClass.newInstance();
+			} catch (InstantiationException e) {
+			} catch (IllegalAccessException e) {
+			}
+			if (this.transport == null) {
+				try {
+					this.transport = new UdpTransport();
+				} catch (UnknownHostException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			this.strategy.setTransport(this.transport);
+		}
+		return this.transport;
+	}
 }
