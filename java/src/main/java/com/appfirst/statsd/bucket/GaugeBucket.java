@@ -1,8 +1,12 @@
-package com.appfirst.statsd;
+package com.appfirst.statsd.bucket;
 
-public class CounterBucket implements Bucket{
+import java.util.Date;
+
+public class GaugeBucket implements Bucket {
 	private String name;
-	private int value = 0;
+	private int sumstat = 0;
+	private int count = 0;
+	private long timestamp;
 	private String message = null;
 
 	@Override
@@ -17,16 +21,20 @@ public class CounterBucket implements Bucket{
 
 	@Override
 	public String toString(){
-		String stat = String.format("%s:%d|c",  name, this.value);
+		String stat = null;
+		int avg = this.sumstat/this.count;
 		if (message != null && !message.equals("")){
-			stat += String.format("||%s", message);
-		} 
+			stat = String.format("%s:%d|g|%s|%s", name, avg, timestamp, message);
+		} else {
+			stat = String.format("%s:%d|g|%s",  name, avg, timestamp);
+		}
 		return stat;
 	}
 
 	@Override
 	public void infuse(int value, String message){
-		this.value += value;
+		this.sumstat += value;
+		this.count++;
 		if (message != null && !message.equals("")){
 			if (this.message != null){
 				this.message += "|" + message;
@@ -34,7 +42,6 @@ public class CounterBucket implements Bucket{
 				this.message = message;
 			}
 		}
+		this.timestamp = new Date().getTime();
 	}
-	
-//	public void merge
 }

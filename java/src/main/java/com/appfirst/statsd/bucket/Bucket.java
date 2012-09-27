@@ -1,4 +1,4 @@
-package com.appfirst.statsd;
+package com.appfirst.statsd.bucket;
 
 public interface Bucket {
 	public abstract String getName();

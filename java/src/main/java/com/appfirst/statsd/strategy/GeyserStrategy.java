@@ -1,4 +1,4 @@
-package com.appfirst.statsd;
+package com.appfirst.statsd.strategy;
 
 import java.util.List;
 import java.util.Map;
@@ -9,6 +9,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import com.appfirst.statsd.Transport;
+import com.appfirst.statsd.bucket.Bucket;
 
 public final class GeyserStrategy implements Strategy{
 	static Logger log = Logger.getLogger(GeyserStrategy.class);

@@ -1,4 +1,5 @@
-package com.appfirst.statsd;
+package com.appfirst.statsd.bucket;
+
 
 public class TimerBucket implements Bucket{
 	private String name;

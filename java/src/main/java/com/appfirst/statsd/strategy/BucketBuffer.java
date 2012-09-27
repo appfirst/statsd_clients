@@ -1,7 +1,9 @@
-package com.appfirst.statsd;
+package com.appfirst.statsd.strategy;
 
 import java.util.Hashtable;
 import java.util.Map;
+
+import com.appfirst.statsd.bucket.Bucket;
 
 
 class BucketBuffer {

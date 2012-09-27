@@ -1,4 +1,4 @@
-package com.appfirst.statsd;
+package com.appfirst.statsd.strategy;
 
 public class StrategyFactory {
 	private static final GeyserStrategy singleInstance = new GeyserStrategy();

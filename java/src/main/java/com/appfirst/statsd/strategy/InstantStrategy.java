@@ -1,4 +1,7 @@
-package com.appfirst.statsd;
+package com.appfirst.statsd.strategy;
+
+import com.appfirst.statsd.Transport;
+import com.appfirst.statsd.bucket.Bucket;
 
 
 
