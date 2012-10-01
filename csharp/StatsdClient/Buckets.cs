@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Statsd
 {
@@ -29,7 +28,7 @@ namespace Statsd
         }
     }
 
-    abstract class AbstractBucket : IBucket
+    public abstract class AbstractBucket : IBucket
     {
         private String name;
 
@@ -83,7 +82,7 @@ namespace Statsd
         public abstract void Infuse(int value, String message);
     }
 
-    class CounterBucket : AbstractBucket
+    public class CounterBucket : AbstractBucket
     {
 	    private int value = 0;
 
@@ -98,7 +97,7 @@ namespace Statsd
         }
     }
 
-    class TimerBucket : AbstractBucket
+    public class TimerBucket : AbstractBucket
     {
 	    private int sumstat = 0;
 	    private int count = 0;
@@ -117,7 +116,7 @@ namespace Statsd
 	    }
     }
 
-    class GaugeBucket : AbstractBucket
+    public class GaugeBucket : AbstractBucket
     {
 	    private int sumstat = 0;
 	    private int count = 0;
@@ -140,13 +139,13 @@ namespace Statsd
 	    }
     }
 
-    class BucketBuffer {
+    public class BucketBuffer
+    {
 	    private Dictionary<String, IBucket> cellar = new Dictionary<String, IBucket>();
 
 	    public bool IsEmpty(){
 		    return this.cellar.Count == 0;
 	    }
-
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Accumulate<T>(String bucketname, int value, string message)

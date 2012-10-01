@@ -1,4 +1,4 @@
-package com.appfirst.statsd;
+package com.appfirst.statsd.transport;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -9,15 +9,16 @@ import java.nio.channels.DatagramChannel;
 
 import org.apache.log4j.Logger;
 
+
 /**
  * Standard Statsd Client that sends stats thru UDP protocol.
  * 
  * @author Yangming Huang
  *
  */
-public class UDPClient extends AbstractStatsdClient implements StatsdClient{
+public class UdpTransport implements Transport{
 	public static int DEFAULT_STATSD_PORT = 8125;
-	private static Logger log = Logger.getLogger(UDPClient.class);
+	private static Logger log = Logger.getLogger(UdpTransport.class);
 
 	private InetSocketAddress _address;
 	private DatagramChannel _channel;
@@ -28,7 +29,7 @@ public class UDPClient extends AbstractStatsdClient implements StatsdClient{
 	 * @throws UnknownHostException
 	 * @throws IOException
 	 */
-	public UDPClient() throws UnknownHostException, IOException{
+	public UdpTransport() throws UnknownHostException, IOException{
 		this(InetAddress.getLocalHost(), DEFAULT_STATSD_PORT);
 	}
 
@@ -40,7 +41,7 @@ public class UDPClient extends AbstractStatsdClient implements StatsdClient{
 	 * @throws UnknownHostException
 	 * @throws IOException
 	 */
-	public UDPClient(String host, int port) throws UnknownHostException, IOException {
+	public UdpTransport(String host, int port) throws UnknownHostException, IOException {
 		this(InetAddress.getByName(host), port);
 	}
 
@@ -51,15 +52,16 @@ public class UDPClient extends AbstractStatsdClient implements StatsdClient{
 	 * @param port - The port of the StatsD server
 	 * @throws IOException
 	 */
-	public UDPClient(InetAddress host, int port) throws IOException {
+	public UdpTransport(InetAddress host, int port) throws IOException {
 		this._address = new InetSocketAddress(host, port);
 		this._channel = DatagramChannel.open();
 	}
 
 	/* (non-Javadoc)
-	 * @see com.appfirst.statsd.AbstractStatsdClient#doSend(java.lang.String)
+	 * @see com.appfirst.statsd.Transport#doSend(java.lang.String)
 	 */
-	protected final boolean doSend(final String stat) {
+	@Override
+	public final boolean doSend(final String stat) {
 		log.info(String.format("Sending stat: %s", stat));
 		try {
 			final byte[] data = stat.getBytes("utf-8");

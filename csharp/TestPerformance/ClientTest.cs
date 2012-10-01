@@ -1,12 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net.Sockets;
-using System.Threading;
 using System.Diagnostics;
+using System.Text;
+using System.Threading;
 using Statsd;
-
 
 namespace TestPerformance
 {
@@ -36,18 +32,17 @@ namespace TestPerformance
 
         private string bucketPrefix;
 
-        public ThreadPoolStatsd(ManualResetEvent doneEvent, string bucketPrefix)
+        private IStatsdClient statsd;
+
+        public ThreadPoolStatsd(ManualResetEvent doneEvent, string bucketPrefix, IStatsdClient statsd)
         {
             this.doneEvent = doneEvent;
             this.bucketPrefix = bucketPrefix;
+            this.statsd = statsd;
         }
 
         public void SendMessages(Object threadContext)
         {
-            StatsdPipe statsd = new StatsdPipe();
-            statsd.Transport = new TransportMock();
-            statsd.Strategy = new GeyserStrategy(500);
-
             int threadIndex = (int)threadContext;
             for (int i = 0; i < 100; i++)
             {
@@ -72,7 +67,7 @@ namespace TestPerformance
             Console.WriteLine("TestUnderPressure");
             StatsdPipe statsd = new StatsdPipe();
             statsd.Transport = new TransportMock();
-            statsd.Strategy = new GeyserStrategy(500);
+            statsd.Strategy = new BufferedStrategy(500);
 
             statsd.Increment(bucketPrefix + "pressure.multiple1");
             try
@@ -101,60 +96,76 @@ namespace TestPerformance
             ManualResetEvent[] doneEvents = new ManualResetEvent[10];
             for (int i = 0; i < doneEvents.Length; i++)
             {
+                StatsdPipe statsd = new StatsdPipe();
+                statsd.Transport = new TransportMock();
+                statsd.Strategy = new BufferedStrategy(500);
                 doneEvents[i] = new ManualResetEvent(false);
-                ThreadPoolStatsd tps = new ThreadPoolStatsd(doneEvents[i], bucketPrefix);
+                ThreadPoolStatsd tps = new ThreadPoolStatsd(doneEvents[i], bucketPrefix, statsd);
                 ThreadPool.QueueUserWorkItem(tps.SendMessages, i);
             }
 
             WaitHandle.WaitAll(doneEvents);
         }
 
-        static void TestMailSlotStreaming()
-        {
-            Console.WriteLine("TestMailSlotStreaming");
-            StatsdPipe statsd = new StatsdPipe();
-            statsd.Strategy = new GeyserStrategy(2000);
-
-            for (int i=0; i<10; i++)
-            {
-                //Thread.Sleep(r.Next(5));
-                Thread.Sleep(1000);
-                statsd.Timing(bucketPrefix + "newmailslot.timer", 16);
-                statsd.Gauge(bucketPrefix + "newmailslot.gauge", 8);
-                statsd.UpdateCount(4, bucketPrefix + "newmailslot.counter");
-                statsd.UpdateCount(2, bucketPrefix + "newmailslot.counter");
-                statsd.Increment(bucketPrefix + "newmailslot.counter");
-                statsd.Decrement(bucketPrefix + "newmailslot.counter");
-            }
-        }
-
         static void ShowExample(IStatsdClient statsd)
         {
             statsd.Gauge(bucketPrefix + "gauge", 500);
             statsd.Gauge("test|Gauge(string message, string key, int value)", bucketPrefix + "gauge", 500);
-            statsd.Timing(bucketPrefix + "timer", 500);
             statsd.Timing("test|Timer(string message, string key, int value)", bucketPrefix + "timer", 500);
             statsd.Increment(bucketPrefix + "counter");
             statsd.Decrement(bucketPrefix + "counter");
             statsd.UpdateCount(2, bucketPrefix + "counter");
-            statsd.UpdateCount(3, 0, bucketPrefix + "counter", bucketPrefix + "counter2");
-            statsd.UpdateCount(4, 2, bucketPrefix + "counter", bucketPrefix + "counter2");
-            statsd.UpdateCount("test|UpdateCount(string message, string key, int value)", 5, bucketPrefix + "counter", bucketPrefix + "counter2");
-            statsd.UpdateCount("UpdateCount(string message, string key, int value)|test", 6, 1, bucketPrefix + "counter");
+            statsd.UpdateCount(4, 0, bucketPrefix + "counter", bucketPrefix + "counter2");
+            statsd.UpdateCount(8, 2, bucketPrefix + "counter", bucketPrefix + "counter2");
+            statsd.UpdateCount("test|UpdateCount(string message, string key, int value)", 16, bucketPrefix + "counter", bucketPrefix + "counter2");
+            statsd.UpdateCount("UpdateCount(string message, string key, int value)|test", 32, 1, bucketPrefix + "counter");
         }
 
+        static void SendingWithGeyserStrategy()
+        {
+            Console.WriteLine("SendingWithGeyserStrategy");
+            StatsdPipe statsd = new StatsdPipe();
+            statsd.Strategy = new BufferedStrategy(5000);
+            while (true)
+            {
+                Thread.Sleep(1);
+                statsd.Increment(bucketPrefix + "mailslot");
+            }
+        }
+
+        static void SendingWithoutGeyserStrategy()
+        {
+            Console.WriteLine("SendingWithoutGeyserStrategy");
+            StatsdPipe statsd = new StatsdPipe();
+            int i = 0;
+            StringBuilder sb = new StringBuilder();
+            sb.Append("a");
+            for (i = 0; i < 10; i++)
+            {
+                sb.Append(sb.ToString());
+            }
+            Console.WriteLine(sb.Length);
+            statsd.UpdateCount(sb.ToString(), 1, "a");
+            statsd.Strategy = new BufferedStrategy(5000);
+            while (true)
+            {
+                Thread.Sleep(1);
+                statsd.Increment(bucketPrefix + "mailslot");
+            }
+            
+        }
+ 
         static void TestBasic()
         {
-            Console.WriteLine("TestBasic");
+            Console.WriteLine("SendingWithoutGeyserStrategy");
             StatsdPipe statsd = new StatsdPipe();
-            statsd.Strategy = new GeyserStrategy(5000);
             while (true)
             {
                 Thread.Sleep(1000);
-
                 ShowExample(statsd);
             }
         }
+
 
         static void TestTimeStamp()
         {
@@ -164,11 +175,12 @@ namespace TestPerformance
 
         static void Main(string[] args)
         {
-            TestUnderPressure();
-            TestMultiThreading();
-            TestMailSlotStreaming();
-            ShowExample(new StatsdPipe());
-            TestBasic();
+            //TestUnderPressure();
+            //TestMultiThreading();
+            //ShowExample(new StatsdPipe());
+            //SendingWithGeyserStrategy();
+            SendingWithoutGeyserStrategy();
+            //MailSlotTest.TestMailSlot();
         }
     }
 }

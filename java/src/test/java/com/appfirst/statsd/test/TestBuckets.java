@@ -6,9 +6,9 @@ import java.util.Date;
 
 import org.junit.Test;
 
-import com.appfirst.statsd.CounterBucket;
-import com.appfirst.statsd.GaugeBucket;
-import com.appfirst.statsd.TimerBucket;
+import com.appfirst.statsd.bucket.CounterBucket;
+import com.appfirst.statsd.bucket.GaugeBucket;
+import com.appfirst.statsd.bucket.TimerBucket;
 
 public class TestBuckets {
 
@@ -16,11 +16,10 @@ public class TestBuckets {
 	public final void testCounter() {
 		CounterBucket bucket = new CounterBucket();
 		bucket.setName("counter");
-		String actual = bucket.infuse(1, 1, "message1")
-							  .infuse(2, 1, "message2")
-							  .infuse(4, 1, null)
-							  .infuse(8, 0, null)
-							  .toString();
+		bucket.infuse(1, "message1");
+		bucket.infuse(2, "message2");
+		bucket.infuse(4, null);
+		String actual = bucket.toString();
 		String expected = "counter:7|c||message1|message2";
 		assertEquals("Aggregated stat", expected, actual);
 	}
@@ -29,10 +28,10 @@ public class TestBuckets {
 	public final void testTimer() {
 		TimerBucket bucket = new TimerBucket();
 		bucket.setName("timer");
-		String actual = bucket.infuse(1, "message1")
-							  .infuse(3, "message2")
-							  .infuse(5, null)
-							  .toString();
+		bucket.infuse(1, "message1");
+		bucket.infuse(3, "message2");
+		bucket.infuse(5, null);
+		String actual = bucket.toString();
 		String expected = "timer:3|ms||message1|message2";
 		assertEquals("Aggregated stat", expected, actual);
 	}
@@ -44,15 +43,14 @@ public class TestBuckets {
 		try {
 			GaugeBucket bucket = new GaugeBucket();
 			bucket.setName("gauge");
-			bucket.infuse(1, "message1")
-				  .infuse(3, "message2");
+			bucket.infuse(1, "message1");
+			bucket.infuse(3, "message2");
 
 			beforelast = new Date().getTime();
 			Thread.sleep(1);
 
-			actual = bucket
-				.infuse(5, null)
-				.toString();
+			bucket.infuse(5, null);
+			actual = bucket.toString();
 
 			Thread.sleep(1);
 		} catch (InterruptedException e) {

@@ -1,12 +1,9 @@
-package com.appfirst.statsd;
-
-import java.util.Random;
+package com.appfirst.statsd.bucket;
 
 public class CounterBucket implements Bucket{
 	private String name;
 	private int value = 0;
 	private String message = null;
-	private static Random RNG = new Random();
 
 	@Override
 	public void setName(String name){
@@ -27,10 +24,9 @@ public class CounterBucket implements Bucket{
 		return stat;
 	}
 
-	public CounterBucket infuse(int value, double sampleRate, String message){
-		if (sampleRate < 1.0 && RNG.nextDouble() > sampleRate) 
-			return this;
-		this.value += value/sampleRate;
+	@Override
+	public void infuse(int value, String message){
+		this.value += value;
 		if (message != null && !message.equals("")){
 			if (this.message != null){
 				this.message += "|" + message;
@@ -38,7 +34,6 @@ public class CounterBucket implements Bucket{
 				this.message = message;
 			}
 		}
-		return this;
 	}
 	
 //	public void merge

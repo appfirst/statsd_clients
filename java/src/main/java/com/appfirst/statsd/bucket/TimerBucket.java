@@ -1,12 +1,10 @@
-package com.appfirst.statsd;
+package com.appfirst.statsd.bucket;
 
-import java.util.Date;
 
-public class GaugeBucket implements Bucket {
+public class TimerBucket implements Bucket{
 	private String name;
 	private int sumstat = 0;
 	private int count = 0;
-	private long timestamp;
 	private String message = null;
 
 	@Override
@@ -24,14 +22,15 @@ public class GaugeBucket implements Bucket {
 		String stat = null;
 		int avg = this.sumstat/this.count;
 		if (message != null && !message.equals("")){
-			stat = String.format("%s:%d|g|%s|%s", name, avg, timestamp, message);
+			stat = String.format("%s:%d|ms||%s", name, avg, message);
 		} else {
-			stat = String.format("%s:%d|g|%s",  name, avg, timestamp);
+			stat = String.format("%s:%d|ms",  name, avg);
 		}
 		return stat;
 	}
 
-	public GaugeBucket infuse(int value, String message){
+	@Override
+	public void infuse(int value, String message){
 		this.sumstat += value;
 		this.count++;
 		if (message != null && !message.equals("")){
@@ -41,7 +40,6 @@ public class GaugeBucket implements Bucket {
 				this.message = message;
 			}
 		}
-		this.timestamp = new Date().getTime();
-		return this;
 	}
+
 }
