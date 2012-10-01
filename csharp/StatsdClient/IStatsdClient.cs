@@ -1,5 +1,4 @@
-﻿using System;
-namespace Statsd
+﻿namespace Statsd
 {
     public interface IBucket
     {
