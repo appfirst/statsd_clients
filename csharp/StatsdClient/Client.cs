@@ -1,15 +1,6 @@
-
 using System;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.IO;
-using Microsoft.Win32.SafeHandles;
-using System.Runtime.InteropServices;
-using System.Timers;
-using System.Diagnostics;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Timers;
 
 
 namespace Statsd
@@ -128,14 +119,14 @@ namespace Statsd
         #endregion
     }
 
-    public class GeyserStrategy : IStrategy
+    public class BufferedStrategy : IStrategy
     {
         private static BucketBuffer buffer = new BucketBuffer();
         private static Timer schedule = new Timer();
         public double Interval = 20000;
         private static SendDelegate doSend;
 
-        static GeyserStrategy()
+        static BufferedStrategy()
         {
             AppDomain domain = AppDomain.CurrentDomain;
             domain.ProcessExit += new EventHandler(Flush);
@@ -144,9 +135,9 @@ namespace Statsd
             schedule.Elapsed += new ElapsedEventHandler(Flush);
         }
 
-        public GeyserStrategy(){}
+        public BufferedStrategy(){}
 
-        public GeyserStrategy(int interval)
+        public BufferedStrategy(int interval)
         {
             this.Interval = interval;
         }
@@ -170,7 +161,7 @@ namespace Statsd
         public bool Emit<T>(SendDelegate doSend, string bucketname, int value, string message) 
             where T : IBucket
         {
-            GeyserStrategy.doSend = doSend;
+            BufferedStrategy.doSend = doSend;
             buffer.Accumulate<T>(bucketname, value, message);
             
             if (!schedule.Enabled)

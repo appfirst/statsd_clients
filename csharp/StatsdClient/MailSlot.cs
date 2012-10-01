@@ -1,17 +1,15 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
 using Microsoft.Win32.SafeHandles;
-using System.Diagnostics;
 
 namespace Statsd
 {
-    static class NativeMailSlot
+    public static class NativeMailSlot
     {
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
         public static extern SafeFileHandle CreateFile(
@@ -28,7 +26,8 @@ namespace Statsd
         public static extern SafeFileHandle CreateMailslot(string lpName, uint nMaxMessageSize,
            uint lReadTimeout, IntPtr lpSecurityAttributes);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)] 
+        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetMailslotInfo(SafeFileHandle hMailslot, IntPtr lpMaxMessageSize,
            IntPtr lpNextSize, IntPtr lpMessageCount, IntPtr lpReadTimeout);
 
@@ -50,36 +49,36 @@ namespace Statsd
     {
         private static string SLOTNAME = @"\\.\mailslot\afcollectorapi";
 
-        private static SafeFileHandle slotHandle = null;
+        private static int MAX_MESSAGE_SIZE = 2048;
 
-        private static FileStream fs = null;
+        private static FileStream mailSlot = null;
 
-        private FileStream mailSlot
+        private void ensureMailSlot()
         {
-            get
+            if (mailSlot == null)
             {
-                if (fs == null)
-                {
-                    if (slotHandle == null || slotHandle.IsInvalid || slotHandle.IsClosed)
-                    {
-                        slotHandle = NativeMailSlot.CreateFile(SLOTNAME,
-                            (uint)FileAccess.Write,
-                            (uint)FileShare.ReadWrite,
-                            0,
-                            (uint)FileMode.Open,
-                            (uint)FileAttributes.Normal,
-                            0);
-                    }
-                    if (!slotHandle.IsInvalid)
-                    {
-                        fs = new FileStream(slotHandle, FileAccess.Write);
-                    }
-                    else
-                    {
-                        throw new Exception("MailSlot Handle is Invalid");
-                    }
-                }
+                mailSlot = CreateFileStream(SLOTNAME);
+            }
+        }
+
+        private FileStream CreateFileStream(String slotName)
+        {
+            SafeFileHandle slotHandle = NativeMailSlot.CreateFile(
+                slotName,
+                (uint)FileAccess.Write,
+                (uint)FileShare.ReadWrite,
+                0,
+                (uint)FileMode.Open,
+                (uint)FileAttributes.Normal,
+                0);
+            if (!slotHandle.IsInvalid)
+            {
+                FileStream fs = new FileStream(slotHandle, FileAccess.Write);
                 return fs;
+            }
+            else
+            {
+                throw new Exception("MailSlot Cannot be initialized: Handle is Invalid");
             }
         }
 
@@ -87,7 +86,10 @@ namespace Statsd
         {
             get
             {
-                return mailSlot != null;
+                lock (mailSlot)
+                {
+                    return mailSlot != null;
+                }
             }
         }
 
@@ -98,16 +100,25 @@ namespace Statsd
                 UnicodeEncoding encoding = new UnicodeEncoding();
                 string data_string = string.Format("{0}:{1}:{2}", Process.GetCurrentProcess().Id, 3, mail);
                 byte[] data_bytes = encoding.GetBytes(data_string);
-                int byteCount = encoding.GetByteCount(data_string);
-
+                int byteCount = data_bytes.Length;
+                if (byteCount > MAX_MESSAGE_SIZE)
+                {
+                    Console.WriteLine(String.Format(
+                        "message size {0} bytes but is limited to {1} bytes, will be truncated",
+                        byteCount, MAX_MESSAGE_SIZE));
+                    byteCount = MAX_MESSAGE_SIZE;
+                }
+                ensureMailSlot();
                 mailSlot.Write(data_bytes, 0, byteCount);
                 mailSlot.Flush();
 
-                Console.WriteLine("sending " + data_string);
+                Console.WriteLine("sending " + data_string.Substring(0, encoding.GetCharCount(data_bytes, 0, byteCount)));
             }
             catch (IOException ioe)
             {
-                Debug.WriteLine(String.Format("{0} Exception caught.", ioe));
+                this.Close();
+                Console.WriteLine(String.Format("{0} Exception caught.", ioe));
+                return false;
             }
 
             return true;
@@ -117,14 +128,20 @@ namespace Statsd
 
         public void Close()
         {
-            if (fs != null)
+            lock (mailSlot)
             {
-                fs.Close();
-                fs = null;
-            }
-            else if (slotHandle != null && !slotHandle.IsInvalid)
-            {
-                slotHandle.Close();
+                if (mailSlot != null)
+                {
+                    try
+                    {
+                        mailSlot.Close();
+                    }
+                    catch (IOException) { }
+                    finally
+                    {
+                        mailSlot = null;
+                    }
+                }
             }
         }
 
@@ -150,7 +167,8 @@ namespace Statsd
             }
             else
             {
-                retval = this.udpClient.Send(message);
+                return false;
+                //retval = this.udpClient.Send(message);
             }
             return retval;
         }
