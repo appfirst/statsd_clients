@@ -5,6 +5,16 @@
   <version>0.0.2</version>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
+    <defaultGoal>install</defaultGoal>
+    <pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.2.2</version>
+            </plugin>
+        </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -25,6 +35,27 @@
         </configuration>
       </plugin>
       <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <configuration>
+              <archive>
+                  <manifest>
+                      <mainClass>com.appfirst.statsd.AFClient</mainClass>
+                  </manifest>
+              </archive>
+              <descriptorRefs>
+                  <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+          </configuration>
+          <executions>
+              <execution>
+                  <phase>package</phase>
+                  <goals>
+                      <goal>single</goal>
+                  </goals>
+              </execution>
+          </executions>
+      </plugin>
+      <!-- <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <version>2.4</version>
@@ -37,7 +68,7 @@
             </manifest>
           </archive>
         </configuration>
-      </plugin>
+      </plugin> -->
     </plugins>
   </build>
   <properties>
@@ -65,6 +96,11 @@
   		<version>${log4j.version}</version>
   		<scope>system</scope>
   		<systemPath>${project.basedir}/lib/log4j-${log4j.version}.jar</systemPath>
+  	</dependency>
+  	<dependency>
+  		<groupId>junit</groupId>
+  		<artifactId>junit</artifactId>
+  		<version>4.10</version>
   	</dependency>
   </dependencies>
   <url>http://github.com/appfirst/java_statsd_client</url>

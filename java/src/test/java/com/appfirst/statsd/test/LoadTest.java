@@ -1,5 +1,6 @@
 package com.appfirst.statsd.test;
 
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -7,12 +8,11 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
-import com.appfirst.statsd.AFClient;
-import com.appfirst.statsd.AbstractStatsdClient;
+import com.appfirst.statsd.DefaultStatsdClient;
 import com.appfirst.statsd.StatsdClient;
-import com.appfirst.statsd.Transport;
 import com.appfirst.statsd.annotation.Timing;
 import com.appfirst.statsd.strategy.StrategyFactory;
+import com.appfirst.statsd.transport.Transport;
 
 class GeysertStrategyRunner implements Runnable{
 	static Logger log = Logger.getLogger(GeysertStrategyRunner.class);
@@ -21,7 +21,7 @@ class GeysertStrategyRunner implements Runnable{
 	private long sendInterval = 1;
 	
 	GeysertStrategyRunner(int times, long sendInterval, int flushInterval){
-		this.client = new AbstractStatsdClient(){
+		this.client = new DefaultStatsdClient(){
 			@Override
 			protected Transport getTransport() {
 				return new Transport(){
@@ -56,8 +56,33 @@ class GeysertStrategyRunner implements Runnable{
 
 public class LoadTest {
 
+	static void underPressure() throws InterruptedException
+	{
+		DefaultStatsdClient client = new DefaultStatsdClient();
+		client.setStrategy(new StrategyFactory().getGeyserStrategy(2));
+		Random r = new Random();
+		for (int i = 0; i < 1000; i++) {
+			Thread.sleep(r.nextInt(5));
+			long start = System.currentTimeMillis();
+			client.increment("multiple1");
+			int elapsedTimeMillis = (int) (System.currentTimeMillis() - start);
+			client.timing("incr_time", elapsedTimeMillis);
+			if (i % 3 == 0) {
+				client.increment("multiple3");
+			}
+		}
+	}
+	
 	public static void main(String[] args) {
 		BasicConfigurator.configure();
+		
+		try {
+			underPressure();
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		ExecutorService executor = Executors.newFixedThreadPool(10);
 
 		for (int i=0; i<10000; i++){
@@ -71,79 +96,4 @@ public class LoadTest {
 		}
 	}
 
-}
-
-
-
-
-// A correct implementation of a producer and consumer.
-class Q {
-	int n;
-	boolean valueSet = false;
-
-	synchronized int get() {
-		if (!valueSet)
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				System.out.println("InterruptedException caught");
-			}
-		System.out.println("Got: " + n);
-		valueSet = false;
-		notify();
-		return n;
-	}
-
-	synchronized void put(int n) {
-		if (valueSet)
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				System.out.println("InterruptedException caught");
-			}
-		this.n = n;
-		valueSet = true;
-		System.out.println("Put: " + n);
-		notify();
-	}
-}
-
-class Producer implements Runnable {
-	Q q;
-
-	Producer(Q q) {
-		this.q = q;
-		new Thread(this, "Producer").start();
-	}
-
-	public void run() {
-		int i = 0;
-		while (true) {
-			q.put(i++);
-		}
-	}
-}
-
-class Consumer implements Runnable {
-	Q q;
-
-	Consumer(Q q) {
-		this.q = q;
-		new Thread(this, "Consumer").start();
-	}
-
-	public void run() {
-		while (true) {
-			q.get();
-		}
-	}
-}
-
-class PCFixed {
-	public static void main(String args[]) {
-		Q q = new Q();
-		new Producer(q);
-		new Consumer(q);
-		System.out.println("Press Control-C to stop.");
-	}
 }
