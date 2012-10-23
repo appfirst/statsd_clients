@@ -3,6 +3,7 @@ package com.appfirst.statsd.test;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.net.UnknownHostException;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -16,81 +17,82 @@ import org.junit.Test;
 import com.appfirst.statsd.AFClient;
 import com.appfirst.statsd.DefaultStatsdClient;
 import com.appfirst.statsd.StatsdClient;
+import com.appfirst.statsd.StatsdHandler;
 import com.appfirst.statsd.strategy.StrategyFactory;
 //import com.appfirst.statsd.transport.Transport;
 
 public class TestStatsdClient {
 	static Logger log = Logger.getLogger(TestStatsdClient.class);
 
-	@Test
-	public final void testSetStrategy() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testDump() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testRun() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testGaugeStringInt() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testGaugeStringIntString() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testTimingStringInt() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testTimingStringIntString() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testDecrement() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testIncrement() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testUpdateStatsIntStringArray() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testUpdateStatsIntDoubleStringArray() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testUpdateStatsIntStringDoubleStringArray() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testUpdateStatsStringIntDoubleString() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	@Test
-	public final void testDoSend() {
-		fail("Not yet implemented"); // TODO
-	}
+//	@Test
+//	public final void testSetStrategy() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testDump() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testRun() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testGaugeStringInt() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testGaugeStringIntString() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testTimingStringInt() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testTimingStringIntString() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testDecrement() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testIncrement() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testUpdateStatsIntStringArray() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testUpdateStatsIntDoubleStringArray() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testUpdateStatsIntStringDoubleStringArray() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testUpdateStatsStringIntDoubleString() {
+//		fail("Not yet implemented"); // TODO
+//	}
+//
+//	@Test
+//	public final void testDoSend() {
+//		fail("Not yet implemented"); // TODO
+//	}
 	
 	@Test
 	public final void testUnderPressure() throws UnknownHostException, IOException, InterruptedException {
@@ -154,23 +156,29 @@ public class TestStatsdClient {
 		ExecutorService executor = Executors.newFixedThreadPool(10);
 		
 		for (int i=0; i<10; i++){
-			executor.execute(new GeysertStrategyRunner(100000000, 0, 2));
+			executor.execute(new GeysertStrategyRunner(100000, 0, 2));
 		}
-		
-		
-		
-		executor.awaitTermination(1000, TimeUnit.SECONDS);
+		executor.awaitTermination(10, TimeUnit.SECONDS);
 	}
-	
-	@Test
-	public final void testAnotherMultithreading() throws UnknownHostException, IOException, InterruptedException {
-		BasicConfigurator.configure();
-		ExecutorService executor = Executors.newFixedThreadPool(10);
-		
-		for (int i=0; i<10; i++){
-			executor.execute(new GeysertStrategyRunner(100000000, 0, 2));
-		}
 
-		executor.awaitTermination(1000, TimeUnit.SECONDS);
+	public interface DoSomethinger {
+		void doSomething();
+	}
+
+	@Test
+	public final void testStatsdHandler() throws UnknownHostException, IOException, InterruptedException {
+		BasicConfigurator.configure();
+		DoSomethinger proxy = (DoSomethinger) StatsdHandler.proxy(new DoSomethinger(){
+			@com.appfirst.statsd.annotation.Timing("some.timer")
+			@com.appfirst.statsd.annotation.Counting({ "some.counter1", "some.counter2" })
+			public void doSomething(){
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		proxy.doSomething();
 	}
 }
