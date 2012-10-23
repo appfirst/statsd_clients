@@ -116,11 +116,11 @@ class TimerBucket(object):
         self.count = 0
 
     def __str__(self):
-        avg = self.sumstat/self.count;
+        avg = self.summstat/self.count;
         if self.message:
             return "%s|ms||%s" % (avg, self.message)
         else:
-            return "%s|ms" % self.stat
+            return "%s|ms" % avg
 
     def aggregate(self, stat, message=None):
         self.summstat += stat

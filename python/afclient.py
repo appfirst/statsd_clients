@@ -135,8 +135,20 @@ Statsd.set_strategy(GeyserStategy())
 if __name__ == "__main__":
 #    import time
     Statsd.set_transport(AFTransport(verbosity=True))
+    max_count = 1000000
     count = 1
+    @Statsd.count("python.test.count")
+    @Statsd.time("python.test.time")
+    def do_nothing():
+        Statsd.timing("python.test.timer",500)
+        Statsd.gauge("python.test.gauge",500)
+        Statsd.increment("python.test.counter")
+        Statsd.decrement("python.test.counter")
+        Statsd.update_stats("python.test.counter", 5, sample_rate=1, message="ok")
+        Statsd.update_stats("python.test.counter", -5, sample_rate=0)
     while True:
-        Statsd.increment("mqtest")
-        print "send mqtest %s" % count
+        if max_count and count >= max_count:
+            break
+        do_nothing()
+#        print "count %s" % count
         count += 1
