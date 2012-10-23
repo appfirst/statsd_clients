@@ -25,27 +25,33 @@ public final class GeyserStrategy implements Strategy{
 	private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
 	private BucketBuffer buffer = new BucketBuffer();
+	
+	private static boolean shutdownHookSet = false;
 
-	private void initialize(){
-		Runtime.getRuntime().addShutdownHook(new Thread(){
-			@Override
-			public void run() {
-				log.info("final execution");
-				if (!executor.isShutdown()){
-					executor.shutdown();
-					try {
-						if (!executor.awaitTermination(SHUTDOWN_TIME, unit)) {
-							log.warn("Executor did not terminate in the specified time.");
-							List<Runnable> droppedTasks = executor.shutdownNow();
-							log.warn("Executor was abruptly shut down. " + droppedTasks.size() + " tasks will not be executed.");
+	private void setShutdownHook(){
+		if (!shutdownHookSet){
+			log.info("set the shutdown hook");
+			Runtime.getRuntime().addShutdownHook(new Thread(){
+				@Override
+				public void run() {
+					log.info("final execution");
+					if (!executor.isShutdown()){
+						executor.shutdown();
+						try {
+							if (!executor.awaitTermination(SHUTDOWN_TIME, unit)) {
+								log.warn("Executor did not terminate in the specified time.");
+								List<Runnable> droppedTasks = executor.shutdownNow();
+								log.warn("Executor was abruptly shut down. " + droppedTasks.size() + " tasks will not be executed.");
+							}
+						} catch (InterruptedException e) {
+							e.printStackTrace();
 						}
-					} catch (InterruptedException e) {
-						e.printStackTrace();
 					}
+					flush();
 				}
-				flush();
-			}
-		});
+			});
+			shutdownHookSet = true;
+		}
 	}
 
 	public void setTransport(Transport transport){
@@ -93,6 +99,7 @@ public final class GeyserStrategy implements Strategy{
 	private void flush(){
 		if (!buffer.isEmpty()){
 			Map<String, Bucket> dumpcellar = buffer.withdraw();
+			log.debug(dumpcellar.values());
 			for (Bucket bucket : dumpcellar.values()){
 				transport.doSend(bucket.toString());
 			}
@@ -100,6 +107,7 @@ public final class GeyserStrategy implements Strategy{
 	}
 
 	GeyserStrategy(){
-		this.initialize();
+		log.debug("new GeyserStrategy");
+		this.setShutdownHook();
 	}
 }
