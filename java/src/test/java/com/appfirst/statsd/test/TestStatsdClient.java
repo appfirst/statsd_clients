@@ -1,9 +1,9 @@
 package com.appfirst.statsd.test;
 
-import static org.junit.Assert.fail;
+//import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.lang.reflect.Proxy;
+//import java.lang.reflect.Proxy;
 import java.net.UnknownHostException;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
