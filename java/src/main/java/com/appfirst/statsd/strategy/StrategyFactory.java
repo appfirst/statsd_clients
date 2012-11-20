@@ -1,19 +1,22 @@
 package com.appfirst.statsd.strategy;
 
-public class StrategyFactory {
-	private static final GeyserStrategy singleInstance = new GeyserStrategy();
+public final class StrategyFactory {
 
-	public GeyserStrategy getGeyserStrategy(){
-		return singleInstance;
+	private StrategyFactory(){
+		
 	}
 
-	public GeyserStrategy getGeyserStrategy(int interval){
-		GeyserStrategy instance = singleInstance;
+	public static GeyserStrategy getGeyserStrategy(){
+		return GeyserStrategy.getSingleton();
+	}
+
+	public static GeyserStrategy getGeyserStrategy(int interval){
+		GeyserStrategy instance = GeyserStrategy.getSingleton();
 		instance.setInterval(interval);
 		return instance;
 	}
-	
-	public InstantStrategy getInstantStrategy(){
+
+	public static InstantStrategy getInstantStrategy(){
 		return new InstantStrategy();
 	}
 }

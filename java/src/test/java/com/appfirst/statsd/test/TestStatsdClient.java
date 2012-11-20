@@ -1,184 +1,122 @@
 package com.appfirst.statsd.test;
 
-//import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-//import java.lang.reflect.Proxy;
-import java.net.UnknownHostException;
-import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.Iterator;
+import java.util.regex.Pattern;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import com.appfirst.statsd.AFClient;
-import com.appfirst.statsd.DefaultStatsdClient;
-import com.appfirst.statsd.StatsdClient;
-import com.appfirst.statsd.StatsdHandler;
-import com.appfirst.statsd.strategy.StrategyFactory;
-//import com.appfirst.statsd.transport.Transport;
+import com.appfirst.statsd.transport.MockService;
 
 public class TestStatsdClient {
-	static Logger log = Logger.getLogger(TestStatsdClient.class);
 
-//	@Test
-//	public final void testSetStrategy() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testDump() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testRun() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testGaugeStringInt() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testGaugeStringIntString() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testTimingStringInt() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testTimingStringIntString() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testDecrement() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testIncrement() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testUpdateStatsIntStringArray() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testUpdateStatsIntDoubleStringArray() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testUpdateStatsIntStringDoubleStringArray() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testUpdateStatsStringIntDoubleString() {
-//		fail("Not yet implemented"); // TODO
-//	}
-//
-//	@Test
-//	public final void testDoSend() {
-//		fail("Not yet implemented"); // TODO
-//	}
+	private MockService statsd;
+
+	@org.junit.Before
+	public final void setUp(){
+		 statsd = new MockService();
+	}
+
+	@Test
+	public final void testGaugeStringInt() {
+		statsd.gauge("gauge", 1);
+		String pattern = "gauge:1\\|g\\|\\d+";
+		assertTrue(String.format("pattern: %s but was %s", pattern, statsd.lastMessage()),
+				Pattern.matches(pattern, statsd.lastMessage()));
+	}
+
+	@Test
+	public final void testGaugeStringIntString() {
+		statsd.gauge("gauge", 1, "message");
+		String pattern = "gauge:1\\|g\\|\\d+\\|message";
+		assertTrue(String.format("pattern: %s but was %s", pattern, statsd.lastMessage()),
+				Pattern.matches(pattern, statsd.lastMessage()));
+	}
+
+	@Test
+	public final void testTimingStringInt() {
+		statsd.timing("timer", 1);
+		assertEquals("timer:1|ms", statsd.lastMessage());
+	}
+
+	@Test
+	public final void testTimingStringIntString() {
+		statsd.timing("timer", 1, "message");
+		assertEquals("timer:1|ms||message", statsd.lastMessage());
+	}
+
+	@Test
+	public final void testDecrement() {
+		statsd.decrement("counter");
+		assertEquals("counter:-1|c", statsd.lastMessage());
+	}
+
+	@Test
+	public final void testIncrement() {
+		statsd.increment("counter");
+		assertEquals("counter:1|c", statsd.lastMessage());
+	}
+
+	@Test
+	public final void testUpdateStatsIntStringArray() {
+		statsd.updateStats(1, "counter1", "counter2");
+		Iterator<String> iter = statsd.iterator();
+		String[] expected = {
+				"counter1:1|c",
+				"counter2:1|c"
+			};
+			assertIterator(expected, iter, true);
+	}
+
+	@Test
+	public final void testUpdateStatsIntDoubleStringArray() {
+		statsd.updateStats(1, 1, "counter1", "counter2");
+		Iterator<String> iter = statsd.iterator();
+		String[] expected = {
+			"counter1:1|c",
+			"counter2:1|c"
+		};
+		assertIterator(expected, iter, true);
+	}
+
+	@Test
+	public final void testUpdateStatsIntStringDoubleStringArray() {
+		statsd.updateStats(1, "hello", 1, "counter1", "counter2");
+		Iterator<String> iter = statsd.iterator();
+		String[] expected = {
+				"counter1:1|c||hello",
+				"counter2:1|c||hello"
+			};
+		assertIterator(expected, iter, true);
+	}
+
+	@Test
+	public final void testUpdateStatsStringIntDoubleString() {
+		statsd.updateStats("counter", 1, 1, "hello1");
+		statsd.updateStats("counter", 1, 0, "hello0");
+		Iterator<String> iter = statsd.iterator();
+		String[] expected = {
+				"counter:1|c||hello1"
+			};
+		assertIterator(expected, iter, true);
+	}
 	
-	@Test
-	public final void testUnderPressure() throws UnknownHostException, IOException, InterruptedException {
-		BasicConfigurator.configure();
-//		StatsdClient client = new AFClient();
-		DefaultStatsdClient client = new DefaultStatsdClient();
-		client.setStrategy(new StrategyFactory().getGeyserStrategy(2));
-		Random r = new Random();
-		for (int i=0; i<1000; i++){
-			Thread.sleep(r.nextInt(5));
-			long start = System.currentTimeMillis();
-			client.increment("multiple1");
-			int elapsedTimeMillis = (int)(System.currentTimeMillis()-start);
-			client.timing("incr_time", elapsedTimeMillis);
-			if (i%3==0){
-				client.increment("multiple3");
+	public static void assertIterator(String[] expected, Iterator<String> iter, boolean exact) {
+		int i=0;
+		while (iter.hasNext()){
+			assertTrue("less stats has been sent", i < expected.length);
+			String actual = iter.next();
+			String pattern = expected[i++];
+			if (exact) {
+				assertEquals(pattern, actual);
+			}else{
+				assertTrue(String.format("pattern: %s but was %s", pattern, actual), 
+					Pattern.matches(pattern, actual));
 			}
 		}
-	}
-
-	class GeysertStrategyRunner implements Runnable{
-		private StatsdClient client = null;
-		private int times = 1;
-		private long sendInterval = 1;
-		
-		GeysertStrategyRunner(int times, long sendInterval, int flushInterval){
-//			this.client = new DefaultStatsdClient(){
-//				@Override
-//				protected Transport getTransport() {
-//					return new Transport(){
-//							@Override
-//							public boolean doSend(String stat) {
-//								log.info(String.format("sending %s",stat));
-//								return false;
-//							};
-//					};
-//				}
-//			}.setStrategy(new StrategyFactory().getGeyserStrategy(flushInterval));
-			this.client = new AFClient();
-			this.times = times;
-			this.sendInterval = sendInterval;
-		}
-		
-		public void run(){
-			for (int i=0; i<times; i++){
-				if (sendInterval > 0){
-					try {
-						Thread.sleep(sendInterval);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-				client.increment("multiple1");
-			}
-		}
-	}
-
-	@Test
-	public final void testMultithreading() throws UnknownHostException, IOException, InterruptedException {
-		BasicConfigurator.configure();
-		ExecutorService executor = Executors.newFixedThreadPool(10);
-		
-		for (int i=0; i<10; i++){
-			executor.execute(new GeysertStrategyRunner(100000, 0, 2));
-		}
-		executor.awaitTermination(10, TimeUnit.SECONDS);
-	}
-
-	public interface DoSomethinger {
-		void doSomething();
-	}
-
-	@Test
-	public final void testStatsdHandler() throws UnknownHostException, IOException, InterruptedException {
-		BasicConfigurator.configure();
-		DoSomethinger proxy = (DoSomethinger) StatsdHandler.proxy(new DoSomethinger(){
-			@com.appfirst.statsd.annotation.Timing("some.timer")
-			@com.appfirst.statsd.annotation.Counting({ "some.counter1", "some.counter2" })
-			public void doSomething(){
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-		proxy.doSomething();
+		assertFalse("more stats sent than expected", iter.hasNext());
 	}
 }

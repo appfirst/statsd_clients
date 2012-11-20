@@ -7,7 +7,8 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -18,7 +19,7 @@ import org.apache.log4j.Logger;
  */
 public class UdpTransport implements Transport{
 	public static int DEFAULT_STATSD_PORT = 8125;
-	private static Logger log = Logger.getLogger(UdpTransport.class);
+	private static Logger log = LoggerFactory.getLogger(UdpTransport.class.getSimpleName());
 
 	private InetSocketAddress _address;
 	private DatagramChannel _channel;
@@ -83,5 +84,9 @@ public class UdpTransport implements Transport{
 							_address.getPort()), e);
 			return false;
 		}
+	}
+	
+	@Override
+	public void close(){
 	}
 }

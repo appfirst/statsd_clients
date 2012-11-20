@@ -9,7 +9,18 @@ import com.appfirst.statsd.annotation.Timing;
 
 public class StatsdHandler implements InvocationHandler {
 
-	private static StatsdClient client = new AFClient();
+	private static volatile StatsdClient client;
+
+	private static StatsdClient getClient(){
+		if (client == null) {
+			synchronized(StatsdHandler.class){
+				if (client == null){
+					client = new AFService();
+				}
+			}
+		}
+		return client;
+	}
 
 	public static void setStatsdClient(StatsdClient client){
 		StatsdHandler.client = client;
@@ -29,8 +40,7 @@ public class StatsdHandler implements InvocationHandler {
 	private Object object;
 
 	@Override
-	public Object invoke(Object proxy, Method method, Object[] args)
-			throws Throwable {
+	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		Object result = null;
 		Method objectMethod = object.getClass().getMethod(method.getName(), method.getParameterTypes());
 		if (objectMethod.isAnnotationPresent(Timing.class)){
@@ -38,13 +48,13 @@ public class StatsdHandler implements InvocationHandler {
 			long startTime = System.currentTimeMillis();
 			result = method.invoke(object, args);
 			long endTime = System.currentTimeMillis();
-			client.timing(timing.value(), (int) (startTime-endTime));
+			getClient().timing(timing.value(), (int) (startTime-endTime));
 		} else {
 			method.invoke(object, args);
 		}
 		if (objectMethod.isAnnotationPresent(Counting.class)){
 			Counting counting = objectMethod.getAnnotation(Counting.class);
-			client.increment(counting.value());
+			getClient().increment(counting.value());
 		}
 		return result;
 	}

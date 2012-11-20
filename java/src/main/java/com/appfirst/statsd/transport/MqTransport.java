@@ -3,7 +3,8 @@ package com.appfirst.statsd.transport;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sun.jna.LastErrorException;
 import com.sun.jna.Library;
@@ -15,8 +16,8 @@ import com.sun.jna.Native;
  * @author Yangming Huang
  *
  */
-public class AFTransport implements Transport {
-	static Logger log = Logger.getLogger(AFTransport.class);
+public class MqTransport implements Transport {
+	static Logger log = LoggerFactory.getLogger(MqTransport.class.getSimpleName());
 
 	private static String AFCAPIName = "/afcollectorapi";
 	private static String LibName = "rt";
@@ -45,7 +46,6 @@ public class AFTransport implements Transport {
 		// trim msg if over allowed size
 		String msg = (stat.length() > AFCMaxMsgSize) ? stat.substring(0, AFCMaxMsgSize) : stat;
 
-		log.info(String.format("Sending stat: %s", stat));
 		int mqd = openQueue();
 		int rc = this.mqlib.mq_send(mqd, msg, msg.length(), AFCSeverityStatsd);
 		log.info(String.format("Sent: %s", stat));

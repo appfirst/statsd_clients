@@ -25,32 +25,30 @@ import com.appfirst.statsd.transport.UdpTransport;
  * 
  * @author Yangming Huang @leonmax
  */
-public class DefaultStatsdClient implements StatsdClient {
-	private Strategy strategy = null;
-	private Transport transport = null;
-
-	private Class<? extends Strategy> defaultStrategyClass = InstantStrategy.class;
-	private Class<? extends Transport> defaultTransportClass = UdpTransport.class;
+public class DefaultService implements StatsdService {
+	protected Strategy strategy = null;
+	protected Transport transport = null;
 
 	private final static Random RNG = new Random();
 
-	public StatsdClient setStrategy(Strategy strategy){
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.StatsdService#setStrategy(com.appfirst.statsd.strategy.Strategy)
+	 */
+	@Override
+    public StatsdService setStrategy(Strategy strategy){
 		this.strategy = strategy;
 		this.strategy.setTransport(this.getTransport());
 		// for chaining purpose
 		return this;
 	}
 
-	public Strategy getStrategy(){
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.StatsdService#getStrategy()
+	 */
+	@Override
+    public Strategy getStrategy(){
 		if (strategy == null){
-			try {
-				this.strategy = defaultStrategyClass.newInstance();
-			} catch (InstantiationException e) {
-				this.strategy = new InstantStrategy();
-			} catch (IllegalAccessException e) {
-				this.strategy = new InstantStrategy();
-			}
-			this.strategy.setTransport(this.getTransport());
+			this.setStrategy(new InstantStrategy());
 		}
 		return this.strategy;
 	}
@@ -66,7 +64,7 @@ public class DefaultStatsdClient implements StatsdClient {
 	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int, java.lang.String)
 	 */
 	public boolean gauge(String bucketname, int value, String message){
-		return strategy.send(GaugeBucket.class, bucketname, value, message);
+		return getStrategy().send(GaugeBucket.class, bucketname, value, message);
 	}
 
 	/* (non-Javadoc)
@@ -80,7 +78,7 @@ public class DefaultStatsdClient implements StatsdClient {
 	 * @see com.appfirst.statsd.IStatsdClient#timing(java.lang.String, int, java.lang.String)
 	 */
 	public boolean timing(String bucketname, int value, String message){
-		return strategy.send(TimerBucket.class, bucketname, value, message);
+		return getStrategy().send(TimerBucket.class, bucketname, value, message);
 	}
 
 	/* (non-Javadoc)
@@ -129,26 +127,29 @@ public class DefaultStatsdClient implements StatsdClient {
 		if (sampleRate < 1.0 && RNG.nextDouble() > sampleRate) 
 			return true;
 		value /= sampleRate;
-		return strategy.send(CounterBucket.class, bucketname, value, message);
+		return getStrategy().send(CounterBucket.class, bucketname, value, message);
+	}
+	
+	@Override
+    public StatsdService setTransport(Transport transport){
+		this.transport = transport;
+		// for chaining purpose
+		return this;
 	}
 
-	protected Transport getTransport(){
+	/* (non-Javadoc)
+	 * @see com.appfirst.statsd.StatsdService#getTransport()
+	 */
+	@Override
+    public Transport getTransport(){
 		if (transport == null){
 			try {
-				this.transport = defaultTransportClass.newInstance();
-			} catch (InstantiationException e) {
-			} catch (IllegalAccessException e) {
+				this.transport = new UdpTransport();
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-			if (this.transport == null) {
-				try {
-					this.transport = new UdpTransport();
-				} catch (UnknownHostException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			this.strategy.setTransport(this.transport);
 		}
 		return this.transport;
 	}
