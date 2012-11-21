@@ -4,12 +4,12 @@
     <groupId>com.appfirst</groupId>
     <artifactId>java_statsd_client</artifactId>
     <version>0.0.3</version>
-    <!-- <repositories>
+    <repositories>
       <repository>
         <id>jna</id>
         <url>file://${project.basedir}/lib/repo</url>
       </repository>
-    </repositories> -->
+    </repositories>
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
         <defaultGoal>install</defaultGoal>
@@ -84,12 +84,12 @@
         <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
-            <version>3.4.0</version>
+            <version>3.2.7</version>
         </dependency>
         <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>platform</artifactId>
-            <version>3.4.0</version>
+            <version>3.2.7</version>
         </dependency>
     </dependencies>
     <url>http://github.com/appfirst/statsd_client/java</url>
