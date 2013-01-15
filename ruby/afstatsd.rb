@@ -226,7 +226,7 @@ class Statsd
 	
     socket.send(metric.to_s, 0, @host, @port)
   rescue => boom
-	puts "socket send error"
+	#puts "socket send error"
 	@dropped +=1
     self.class.logger.error { "Statsd: #{boom.class} #{boom}" } if self.class.logger
     nil
@@ -234,7 +234,7 @@ class Statsd
   
   STATSD_SEVERITY = 3
   def mq_transport(metric)
-    puts "MQ < #{metric}\n" #debug
+    #puts "MQ < #{metric}\n" #debug
 	self.class.logger.debug { "Statsd: #{metric}" } if self.class.logger
 	if not @mq 
 		begin
