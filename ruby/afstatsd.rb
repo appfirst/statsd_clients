@@ -3,14 +3,15 @@ require 'forwardable'
 require 'rubygems'
 require 'posix_mq'
 require 'statsd_metrics'
-require 'statsd_buffer'
+require 'statsd_aggregator'
 require 'monitor'
 require 'fcntl'
 
 # = Statsd: A Statsd client (https://github.com/etsy/statsd)
 #
-# @example Set up a global Statsd client for a server on localhost:9125, aggregateaggregate 5 seconds worth of metrics
-#   $statsd = Statsd.new 'localhost', 8125, 5
+# @example Set up a global Statsd client for a server on localhost:9125, 
+#                                aggregate 10 seconds worth of metrics
+#   $statsd = Statsd.new 'localhost', 8125, 10
 # @example Send some stats
 #   $statsd.increment 'garets'
 #   $statsd.timing 'glork', 320
@@ -32,10 +33,10 @@ class Statsd
    # A namespace to prepend to all statsd calls.
   attr_reader :namespace
 
-  # StatsD host. Defaults to 127.0.0.1.
+  # StatsD host. Defaults to 127.0.0.1.  Only used with UDP transport
   attr_reader :host
 
-  # StatsD port. Defaults to 8125.
+  # StatsD port. Defaults to 8125.  Only used with UDP transport
   attr_reader :port
 
   # StatsD namespace prefix, generated from #namespace
@@ -54,31 +55,36 @@ class Statsd
 
   # @param [String] host your statsd host
   # @param [Integer] port your statsd port
-  def initialize(host = '127.0.0.1', port = 8125, interval = 9)
+  # @param [Integer] interval for aggregatore
+  def initialize(host = '127.0.0.1', port = 8125, interval = 20)
     self.host, self.port = host, port
     @prefix = nil
     @postfix = nil
-	@sbuf = StatsdBuffer.new(interval)
+	@aggregator = StatsdAggregator.new(interval)
 	set_transport :mq_transport
 	self.aggregating = true unless interval == 0
 	@dropped = 0
   end
 
+  # @param [method] The ruby symbol for the method that gets called to send
+  # one metric to the server.  eg: set_transport :udp_transport
   def set_transport(transport)
 	@transport = method(transport)
-	@sbuf.transport = @transport
+	@aggregator.transport = @transport  # aggregator needs to know
   end
-  
-  def aggregating
-	@sbuf.buffering
-  end
-  
+    
+  # @param [Boolean] Turn aggregation on or off
   def aggregating= (should_aggregate)
 	if should_aggregate
-		@sbuf.start_buffering(@transport)
+		@aggregator.start(@transport)
 	else
-		@sbuf.stop_buffering
+		@aggregator.stop
 	end
+  end
+  
+  # is the aggregator running?
+  def aggregating
+	@aggregator.running
   end
   
   # @attribute [w] namespace
@@ -207,12 +213,14 @@ class Statsd
   protected
 
   def send_metric(metric)
-	if @sbuf.buffering
-		@sbuf.add metric
+    # All the metric types above funnel to here.  We will send or aggregate.
+	if aggregating
+		@aggregator.add metric
 	else 
 		@transport.call(metric)
 	end
   end
+   
    
   def expand_name(name)
     # Replace Ruby module scoping with '.' and reserved chars (: | @) with underscores.
@@ -223,7 +231,6 @@ class Statsd
   def udp_transport(metric)
     #puts "socket < #{metric}\n"
 	self.class.logger.debug { "Statsd: #{metric}" } if self.class.logger
-	
     socket.send(metric.to_s, 0, @host, @port)
   rescue => boom
 	#puts "socket send error"

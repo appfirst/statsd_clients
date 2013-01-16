@@ -1,12 +1,14 @@
 require './afstatsd.rb'
 
-statsd = Statsd.new '127.0.0.1', 8125, 9
+statsd = Statsd.new '127.0.0.1', 8125, 10
 statsd.namespace = 'ruby.clark'
 
 
 statsd.increment 'counter1'
 statsd.increment 'counter1'
 statsd.decrement 'counter1'		#counters accumulate
+
+=begin
 statsd.gauge 'gauge1', 1024
 statsd.gauge 'gauge1', 1025
 statsd.gauge 'gauge1', 1026
@@ -28,24 +30,23 @@ end
 	statsd.increment 'fast'			# don't do this if aggregation is off
 end	
 
-
 # In this test program, this will give the aggregator time to run.
-5.times do
+15.times do
 	sleep 2
-	statsd.increment 'slow'			# 
+	statsd.increment 'slow'			 
 end
 
+=end
 
-=begin
 # test for thread safety
 threads = []
 start = Time.now
 for i in 0..9 do
 	threads << Thread.new(i) do |j| 
 		start = Time.now
-		10000.times do
+		1000000.times do
 			statsd.increment 'inthethread'
-			#sleep(0.01)
+#			sleep(0.01)
 		end
 		puts "thread #{j} says: I took #{((Time.now - start)*1000).round} ms"
 	end
@@ -54,8 +55,7 @@ threads.each { |t| t.join }
 
 puts "total time: #{((Time.now - start)*1000).round} ms"
 
-sleep 10  # give the aggregator time to fire
-=end
+sleep 30  # give the aggregator time to fire
 
 
 

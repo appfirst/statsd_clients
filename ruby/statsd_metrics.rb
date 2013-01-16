@@ -1,12 +1,15 @@
 # Classes used to store and manipulate each type of metric
+# each type must implement initialize, aggregate, and to_s
 
 class Metric
+	# all metrics share these
 	attr_accessor :name
 	attr_accessor :value
 	attr_accessor :message
 end
 
 class CMetric < Metric
+	# Counter
 	def initialize(name, value, rate=1, msg="")
 		@name = name
 		@value = value
@@ -34,6 +37,7 @@ class CMetric < Metric
 end
 
 class GMetric < Metric
+	# Guage
 	def initialize(name, value, msg="")
 		@name = name
 		@value = value
@@ -52,6 +56,7 @@ class GMetric < Metric
 end
 
 class TMetric < Metric
+	# Timing
 	def initialize(name, value, rate=1, msg="")
 		@name = name
 		@value = value
@@ -74,6 +79,7 @@ class TMetric < Metric
 end
 
 class SMetric < Metric
+	# Set (per the etsy standard)
 	def initialize(name, value, msg="")
 		@name = name
 		@value = value
