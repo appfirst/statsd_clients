@@ -9,7 +9,7 @@ StatsD Example Clients
 
 Here's a bunch of example code contributed by the communinty for interfacing with statsd in a variety of languages.
 
-    ruby/ruby_example.rb     - Ruby
+    ruby/ruby_example.rb     - Ruby with AppFirst Extension
     erlang/statsd.erl        - Erlang
     perl/Etsy/StatsD.pm      - Perl module
     perl/perl-example.pl     - Perl using Etsy/StatsD module
