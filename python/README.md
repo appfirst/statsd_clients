@@ -16,7 +16,7 @@ To use Statsd client, it's ridiculously easy and straightforward:
 	from client import Statsd
 	Statsd.increment("some.counter.bucket")
 	
-By doing this, you sent a message look like this:
+By doing this, you sent a message that will look like this:
 
 	some_bucket:1|c
 	
