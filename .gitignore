@@ -1,0 +1,5 @@
+# used for google code review
+upload.py
+
+# windows batch files
+*.bat
