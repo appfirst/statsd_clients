@@ -18,9 +18,9 @@ Here are some examples for interfacing with statsd in a variety of languages.
     perl/perl-example.pl     - Perl using Etsy/StatsD module
     php/php-example.php      - PHP
 
-    Third Party StatsD Libraries
+Third Party StatsD Libraries
 ============================
 
-   PERL: [Net::StatsD](https://github.com/cosimo/perl5-net-statsd/)
+    PERL: [Net::StatsD](https://github.com/cosimo/perl5-net-statsd/)
 
 Thanks Etsy for the brilliant idea. 
