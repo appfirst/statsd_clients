@@ -16,21 +16,21 @@ Include `target/jar/statsd.jar`
 ## Use Statsd Client
 -------------------
 
-To use Statsd client, it's ridiculously easy and straightforward:
+To use Statsd client, simply:
 
 	StatsdClient client = new AFClient();
 	client.increment("some_bucket");
 	
-By doing this, you sent a message look like this:
+By doing this, you sent a message that will look like this:
 
 	some_bucket:1|c
 	
-That's it! Use it anywhere in your code to get statistical data over time, the server will do everything for you. Currently there are several implementation available in the wild, such as the original [etsy/statsd](https://github.com/etsy/statsd) implementation and [AppFirst Collector][collector]'s seamless integration. Here is [a list of them](http://joemiller.me/2011/09/21/list-of-statsd-server-implementations/).
+That's it! Use that message anywhere in your code to get statistical data over time. The server will do everything for you. Currently there are several implementations available, such as the original [etsy/statsd](https://github.com/etsy/statsd) implementation and [AppFirst Collector][collector]'s seamless integration. Here is [a list of the different implementations](http://joemiller.me/2011/09/21/list-of-statsd-server-implementations/).
 
 
 ###AppFirst Extension:
 
-There are currently two implementation of Statsd client, [UDPClient and AFClient](#about-transport) to sent messages. So it's self-explanatory: to send through UDP, use UDPClient, to send through with AppFirst Collector (please [install the collector][collector] before you do), use AFClient. Here is a complete example:
+There are currently two implementations of Statsd client, [UDPClient and AFClient](#about-transport) to send messages. To send through UDP, use UDPClient. To send through with AppFirst Collector (please [install the collector][collector] before you do this), use AFClient. Here is a complete example:
 
 	import com.appfirst.statsd.StatsdClient;	
 	import com.appfirst.statsd.AFClient;
@@ -44,19 +44,19 @@ There are currently two implementation of Statsd client, [UDPClient and AFClient
 		}
 	}
 
-We also accept message as extension. On the graph the message will be display for each tick.
+We also accept messages as extensions. On the graph, the message will be displayed for each tick.
 <!--We need a example pic to demostrate here.-->
 The format will be position-invariant:
 
 	bucket: field0 | field1 | field2                 | field3
 	bucket: value  | unit   | sampele_rate/timestamp | message
 
-e.g. a counter message and a gauge message look like the following:
+e.g. a counter message and a gauge message:
 
 	bucket:2|c|0.1|some_message
 	bucket:333|g|1344570108|some_message
 
-when message is there, we always keep field2 even if it's blank:
+If a message is there, we will keep field2 (even if it's blank):
 
 	bucket:10|ms||some_message
 
@@ -98,7 +98,7 @@ To updates one or more stats counters by arbitrary amounts:
 	client.updateStats(2, 0.5, "some.int");
 	client.updateStats(3, "act1", 1.0, "some.int")
 	
-And the message for these are:
+And the messages for these are:
 
 	some.int:5|c
 	some.int:2|c|@0.5
@@ -106,9 +106,9 @@ And the message for these are:
 
 ###Sample Rate
 
-Chances are that your application sends lots of counting through UDP/AFTransport which might significantly hurt your performance, Sampling is here to the rescue.
+Chances are that your application sends lots of counting through UDP/AFTransport which might significantly hurt your performance. Sampling can resolve that.
 
-By pass in a `sampleRate`, the client will only sent `(sampleRate * 100)%` of the **counter** messages by **random** and discard the rest "unlucky" ones. The message will carry this rate, and the server will restore the count by multiply `1/sampleRate` upon reception (of course, we lose the precision).
+By pass in a `sampleRate`, the client will only send `(sampleRate * 100)%` of the **counter** messages by **random** and discard the rest "unlucky" ones. The message will carry this rate, and the server will restore the count by multiply `1/sampleRate` upon reception (of course, we lose the precision).
 
 By default the sample_rate is alway 1, which means every message will be sent.
 
@@ -119,7 +119,7 @@ Note this is a **counter** only feature, `sampleRate` for **timer** and **gauge*
 -------------------
 **timing(bucket, elapse, message=None)**
 
-Log timing information, in another word, measuring the elapsed time for a certain action.
+Log timing information is the measuring the elapsed time for a certain action.
 Optionally, you can also define message (with **[AppFirst Extended Format](#appfirst-extension)** only).
 
 	StatsdClient client = new AFClient();
@@ -135,7 +135,7 @@ UOM for timing is always 'ms' (milli-second). A message like this is sent:
 -------------------
 **gauge(bucket, reading, message=None)**
 
-Log gauge information, in another word, the status of the moment. The client will send the message with a timestamp of now.
+Log gauge information is the status of the moment. The client will send the message with a current timestamp.
 
 	StatsdClient client = new AFClient();
 	client.gauge("some.gauge", 500);
@@ -149,7 +149,7 @@ Again, you can also define message (with **[AppFirst Extended Format](#appfirst-
 
 ## UDPClient and AFClient
 -------------------
-In order to send StatsD message in different ways, you can have different implementation to `StatsdClient` interface. Currently we have `UDPClient` and also `AFClient` if you want to communicate with [AppFirst Collector][collector]. `AFClient` will send statsd message through posix message queue, and send UDP message intead when fail to do so. If you are using it under windows, you should enable UDP server of the collector. Please send email to <support@appfirst.com> if you have question about this.
+In order to send StatsD message in different ways, you can have different implementation to `StatsdClient` interface. Currently we have `UDPClient` and `AFClient`. If you want to communicate with [AppFirst Collector][collector], `AFClient` will send statsd message via a posix message queue to the collector. If the message transfer fails, it will sent to the confiured statsd daemon, via the normal statsd message transport method, which is UDP. Please send email to <support@appfirst.com> if you have any questions about this.
 
 To write your own, just extended the skeleton class AbstractStatsdClient and implement the method `doSend(String)`
 
