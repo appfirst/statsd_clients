@@ -2,8 +2,8 @@ require 'socket'
 require 'forwardable'
 require 'rubygems'
 require 'posix_mq'
-require 'statsd_metrics'
-require 'statsd_aggregator'
+require 'afstatsd/statsd_metrics'
+require 'afstatsd/statsd_aggregator'
 require 'monitor'
 require 'fcntl'
 
@@ -265,6 +265,11 @@ class Statsd
         end    
     end
 
+    def both_transport(metric)
+        mq_transport(metric)
+        udp_transport(metric)
+    end
+    
     private
 
     def socket

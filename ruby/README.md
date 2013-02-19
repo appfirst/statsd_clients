@@ -39,7 +39,7 @@ but this is not a requirement.  The third parameter is the timing interval for
 metric aggregation, and defaults to 20 sec.  
 
 The aggregation feature will collect statistics over a period of time, and aggregate 
-them to reduce the amount of data that needs to be transffered.  For example, if an
+them to reduce the amount of data that needs to be transferred.  For example, if an
 individual counter is incremented 1000 times during the aggregation interval, only one 
 message will be sent with a count of 1000, rather than 1000 messages with count of 1.
 The tradeoff is that latency is introduced in reporting the metrics.
@@ -53,19 +53,19 @@ The message queue is configured by the AppFirst collector.  At the current
 time, it is set accept about 200 messages per second.  If overrun, 
 messages will be dropped.  This is another reason to use the aggregation 
 capability.  Dropped messages are counted and can be accessed with the 
-$statsd.dropped attribute.
+`$statsd.dropped` attribute.
 
 The namespace attribute, if specified, will be prepended to all metrics.  
 
 	$statsd.namespace = 'system.component'
 
-This statsd client can also send data the 'Etsy standard' way using a UDP socket.  
-This can be useful if transistioning from some other statsd implementation to the 
-AppFirst implementation:
+This statsd client can also send data the 'Etsy standard' way using a UDP socket.  This 
+can be useful if transistioning from some other statsd implementation to the AppFirst 
+implementation:
 
     $statsd.set_transport(:udp_transport)
 
-If the message queue is not found, the client will revery to using a UDP 
+If the message queue is not found, the client will revert to using a UDP 
 socket as a backup transport method.  The only reason this should happen is if 
 the AppFirst collector is not installed.
     

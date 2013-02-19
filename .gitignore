@@ -3,3 +3,6 @@ upload.py
 
 # windows batch files
 *.bat
+
+# a ruby package.  This is a binary
+*.gem

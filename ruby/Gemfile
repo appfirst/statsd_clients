@@ -1,0 +1,3 @@
+source "http://rubygems.org"
+gem "posix_mq", "~> 2.0.0"
+gemspec

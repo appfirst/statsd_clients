@@ -1,9 +1,10 @@
-require './afstatsd.rb'
+require 'afstatsd'
 
 #$statsd = Statsd.new 'statsd_server.my_company.com', 8125, 20
 
 $statsd = Statsd.new     # use defaults
-$statsd.namespace = 'ruby.clark'
+$statsd.namespace = 'test.ruby'
+
 
 $statsd.increment 'counter1'
 $statsd.increment 'counter1'
