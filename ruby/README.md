@@ -10,20 +10,17 @@ includes an aggregation capability to reduce the amount of data that must be tra
 
 Installation:
 -------------
-Data is transported to the AppFirst collector via a POSIX Message Queue.  The Posix 
-Message Queue is not part of the standard ruby library, and must be installed prior 
-to using this statsd client.  This should do the job:
+The AppFirst statsd client is packaged as a ruby gem.  Installation should be as simple as:
 
-    >gem install posix_mq
+    >gem install afstatsd
 
-Now just copy the .rb files you find here to your working directory.  Test.rb is just 
-an example you can crib from - you don't need to keep it.
+This should automatically install another gem, posix_mq.
 
 Configuration:
 --------------
 Pull in the AppFirst Statsd Client (probably in your main module):
 
-    require './afstatd.rb'
+    require 'afstatd'
 
 At startup, instantiate a Statsd client object:
 
