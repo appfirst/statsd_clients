@@ -6,7 +6,11 @@ A statsd Ruby client for use with the [AppFirst](http://www.appfirst.com) collec
 a lightweight method of gathering statistics from your applications.  The Appfirst 
 version is based on the [statsd Ruby client by reinh](https://github.com/reinh/statsd), 
 but does not inlcude the batch capability of the original.  Instead, it 
-includes an aggregation capability to reduce the amount of data that must be transported.  
+includes an aggregation capability to reduce the amount of data that must be transported.
+
+In the default case, data is sent to the AppFirst collector that is running on the same server
+as your application.  The data is sent over a posix message queue.  If the collector is not found,
+the client will fall back to the UDP transport method.
 
 Installation:
 -------------
@@ -14,7 +18,8 @@ The AppFirst statsd client is packaged as a ruby gem.  Installation should be as
 
     >gem install afstatsd
 
-This should automatically install another gem, posix_mq.
+This should automatically install another gem, posix_mq.  If the posix_mq fails during installation, 
+it is probably because your ruby installation does not include the development package (eg ruby1.9 vs ruby1.9-dev).
 
 Configuration:
 --------------
@@ -75,8 +80,15 @@ application code to report metrics to your AppFirst application or dashboard:
 
 Examples:
 --------- 
-	$statsd.increment 'foo'  						        # increment counter foo.
-	$statsd.decrement 'manchu'						        # decrement counter manchu.
+	$statsd.increment 'foo'  						        # increment event counter 'foo'.
+	$statsd.decrement 'manchu'						        # decrement event counter 'manchu'.
+	$statsd.count 'mustache', 10 						    # report that event 'mustache' ocurred 10 times.
 	$statsd.gauge 'buffers_left' buffer_pool.count	        # report a value as a guage
     $statsd.time 'cart_process_time' {cart_processing}      # will report the execution time of	a block
 
+The easiset statsd metric to use is *increment*.  You don't have to track anything yourself in your application.  Just fire off that one-liner 
+for every event, you want to monitor, and the upstream apparatus will take care of everything for you.
+    
+If you are already keeping track of something, you should report that with a *gauge*. 
+    
+To report how long something took to execute, use the *time* metric.

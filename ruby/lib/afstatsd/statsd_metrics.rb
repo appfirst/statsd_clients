@@ -44,18 +44,15 @@ class GMetric < Metric
         @name = name
         @value = value
         @message = msg
-        @count = 1
     end
     
     def aggregate(value)
-        @value += value        #average
-        @count += 1
+        @value = value        #overwrite
     end
     
     def to_s
-        avg = @value / @count
         if @message == "" then m = "" else m = "|#{@message}" end
-        "#{name}:#{avg}|g#{m}"
+        "#{name}:#{@value}|g#{m}"
     end
 
 end
