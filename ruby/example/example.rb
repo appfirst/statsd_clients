@@ -14,19 +14,18 @@ $statsd.gauge 'gauge1', 1024
 $statsd.gauge 'gauge1', 1025
 $statsd.gauge 'gauge1', 1026
 $statsd.gauge 'gauge1', 1027      
-$statsd.gauge 'gauge1', 1028        # gauges get averaged when aggregated
+$statsd.gauge 'gauge1', 1028        # gauges get overwritten when aggregated
 
-$statsd.time('timing1' ){sleep 0.01}        
-$statsd.time('timing1' ){sleep 0.02}
-$statsd.time('timing1' ){sleep 0.03}
-$statsd.time('timing1' ){sleep 0.04}    # timings get averaged when aggregated
+$statsd.time('timing1'){sleep 0.01}        
+$statsd.time('timing1'){sleep 0.02}
+$statsd.time('timing1'){sleep 0.03}
+$statsd.time('timing1'){sleep 0.04}    # timings get averaged when aggregated
 
 
 =begin
 
 100.times do 
-    #$statsd.increment 'sampled', 0.1, 'sampled'
-    $statsd.increment 'sampled'
+    $statsd.increment 'sampled', 0.1, 'sampled'
 end
 
 $statsd.set 'set1', 1099, "ez"    
@@ -39,7 +38,6 @@ end
     $statsd.increment 'fast'            # don't do this if aggregation is off
 end    
 
-# In this test program, this will give the aggregator time to run.
 15.times do
     sleep 2
     $statsd.increment 'slow'             

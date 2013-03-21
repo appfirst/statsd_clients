@@ -48,6 +48,9 @@ class Statsd
     # count of messages that were dropped due to transmit error
     attr_reader :dropped
 
+    # Turn on debug messages
+    attr_accessor :debugging
+
     class << self
         # Set to a standard logger instance to enable debug logging.
         attr_accessor :logger
@@ -64,6 +67,7 @@ class Statsd
         set_transport :mq_transport
         self.aggregating = true unless interval == 0
         @dropped = 0
+        @debugging = false
     end
 
     # @param [method] The ruby symbol for the method that gets called to send
@@ -73,7 +77,7 @@ class Statsd
         @aggregator.transport = @transport  # aggregator needs to know
     end
 
-    # @param [Boolean] Turn aggregation on or off
+    # @attribute [Boolean] Turn aggregation on or off
     def aggregating= (should_aggregate)
         if should_aggregate
             @aggregator.start(@transport)
@@ -102,6 +106,12 @@ class Statsd
         when nil, false, '' then @postfix = nil
         else @postfix = ".#{pf}"
         end
+    end
+
+    # @attribute [Numeric] interval
+    #   Set aggregation interval
+    def interval=(iv)
+        @aggregator.set_interval(iv)
     end
 
     # @attribute [w] host
@@ -228,19 +238,23 @@ class Statsd
     end
 
     def udp_transport(metric)
-        #puts "socket < #{metric}\n"
+        if @debugging
+            puts "socket < #{metric}\n" #debug
+        end    
         self.class.logger.debug { "Statsd: #{metric}" } if self.class.logger
         socket.send(metric.to_s, 0, @host, @port)
         rescue => boom
             #puts "socket send error"
             @dropped +=1
-            self.class.logger.error { "Statsd: #{boom.class} #{boom}" } if self.class.logger
+            self.class.logger.debug { "Statsd: #{boom.class} #{boom}" } if self.class.logger
             nil
     end
 
     STATSD_SEVERITY = 3
     def mq_transport(metric)
-        #puts "MQ < #{metric}\n" #debug
+        if @debugging
+            puts "MQ < #{metric}\n" #debug
+        end    
         self.class.logger.debug { "Statsd: #{metric}" } if self.class.logger
         if not @mq 
             begin
@@ -260,7 +274,7 @@ class Statsd
             # just drop it on the floor
             @dropped += 1
             #puts "MQ send error: #{boom.class} #{boom}"
-            self.class.logger.error { "Statsd: MQ Send Error#{boom.class} #{boom}" } if self.class.logger
+            self.class.logger.debug { "Statsd: MQ Send Error#{boom.class} #{boom}" } if self.class.logger
             nil
         end    
     end

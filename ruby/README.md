@@ -57,9 +57,13 @@ messages will be dropped.  This is another reason to use the aggregation
 capability.  Dropped messages are counted and can be accessed with the 
 `$statsd.dropped` attribute.
 
-The namespace attribute, if specified, will be prepended to all metrics.  
+The namespace attribute, if specified, will be prepended to all metrics, for example:  
 
 	$statsd.namespace = 'system.component'
+    
+or perhaps:
+    
+	$statsd.namespace = 'system.#{Socket.gethostname}.component'
 
 This statsd client can also send data the 'Etsy standard' way using a UDP socket.  This 
 can be useful if transistioning from some other statsd implementation to the AppFirst 

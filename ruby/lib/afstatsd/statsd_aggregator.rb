@@ -36,9 +36,9 @@
         # their writes after we swap, and before we start reading.
         @timer = Thread.new do
             loop do
-                sleep @interval/2
+                sleep @interval/2.0
                 swap_buffers
-                sleep @interval/2
+                sleep @interval/2.0
                 flush_buffers
             end
         end
