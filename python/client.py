@@ -319,14 +319,13 @@ class Statsd(object):
 
     @staticmethod
     def time(name, enabled=True):
-        """
-        Convenient wrapper.
-        This will count how many this wrapped function is invoked.
+        '''
+        Function Decorator to report function execution time.
 
         >>>@Statsd.time("some.timer.bucket")
         >>>def some_func():
         >>>    pass #do something
-        """
+        '''
         def wrap_timer(method):
             if not enabled:
                 return method
@@ -341,14 +340,13 @@ class Statsd(object):
 
     @staticmethod
     def count(name, sample_rate=1, enabled=True):
-        """
-        Convenient wrapper.
-        This will count how many this wrapped function is invoked.
+        '''
+        Function Decorator to count how many times a function is invoked.
 
         @Statsd.count("some.counter.bucket")
         def some_func():
             pass #do something
-        """
+        '''
         def wrap_counter(method):
             if not enabled:
                 return method
