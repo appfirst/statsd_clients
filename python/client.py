@@ -293,7 +293,7 @@ class Statsd(object):
         >>> Statsd.update_stats('some.int',10)
         """
         if sample_rate < 1 and random.random() > sample_rate:
-            return self
+            return
         if (type(names) is not list):
             names = [names]
         for name in names:
@@ -334,7 +334,7 @@ class Statsd(object):
                 start = time.time()
                 result = method(*args, **kwargs)
                 duration = (time.time() - start) * 1000
-                Statsd.timing(bucket, duration)
+                Statsd.timing(name, duration)
                 return result
             return send_statsd
         return wrap_timer
