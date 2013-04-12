@@ -49,7 +49,7 @@ The tradeoff is that latency is introduced in reporting the metrics.
 Aggregation is turned on by deafult, and we highly recommend it, but it can be disabled 
 by setting the interval to 0, or by setting the aggregating attribute to false:
 
-	$statsd.aggregating = false.
+	$statsd.aggregating = false
 	
 The message queue is configured by the AppFirst collector.  At the current 
 time, it is set accept about 200 messages per second.  If overrun, 

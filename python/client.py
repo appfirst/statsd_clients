@@ -51,49 +51,109 @@ class UDPTransport(object):
         pass
 
 #---------------------------------------------------------------------------
-#   Statsd Buffer to aggregate stats of the same bucket and dump them together
+#   Statsd Aggregator to buffer stats of the same bucket and dump them together
 #---------------------------------------------------------------------------
-class StatsdBuffer(object):
-    def __init__(self):
+class StatsdAggregator(object):
+    def __init__(self, interval, transport):
+        self.running = False
+        self.interval = interval
+        self.transport = transport
         self.buf = {}
         self.lock = threading.Lock()
+        self._service_thread = None
+        
+        self.left_buffers = {}   # 2 buffer groups, each stored in a dict
+        self.right_buffers = {}  # one of each for each thread
+        self.rbufs = self.left_buffers    # buffer group currently being read from
+        self.wbufs = self.right_buffers   # buffer group currently being written to
+    
+    def service_loop(self):
+        #print "launching service loop"
+        while self.running:
+            #print "top of service loop"
+            time.sleep(self.interval/2.0)
+            self.swap_buffers()        
+            time.sleep(self.interval/2.0)
+            self.dump()
 
+    def start(self):
+        #print "starting aggregation"
+        if self.running:
+            return
+        else:
+            self.running = True
+            if self._service_thread == None:
+                self._service_thread = threading.Thread(target=self.service_loop)
+                self._service_thread.daemon = True
+            self._service_thread.start()
+    
+    def stop(self):
+        #print "stopping aggregation"
+        if self.running:
+            self.running = False    
+            self.dump()
+            self.swap_buffers()
+            self.dump()
+        
     def is_empty(self):
         if self.buf:
             return False
         else:
             return True
 
-    def add(self, bucket, clazz, stat, message=None, sample_rate=1):
-        self.lock.acquire()
-        try:
-            if (clazz == CounterBucket):
-                stat = self.buf.setdefault(bucket, clazz(bucket)) \
-                           .aggregate(stat, message, sample_rate)
-            elif (clazz == TimerBucket):
-                stat = self.buf.setdefault(bucket, clazz(bucket)) \
-                           .aggregate(stat, message)
-            elif (clazz == GaugeBucket):
-                stat = self.buf.setdefault(bucket, clazz(bucket)) \
-                           .aggregate(stat, message)
-        finally:
-            self.lock.release()
-        return stat
+    def add(self, bucket):
+        # is setdefault atomic (thread safe)?  It's faster!
+        write_buffer = self.wbufs.setdefault(threading.currentThread(), {})
+        '''
+        if threading.currentThread() in self.wbufs:
+            write_buffer = self.wbufs[threading.currentThread()]
+        else:
+            #print "creating new write buffer for new thread"
+            write_buffer = {}
+            self.lock.acquire()
+            self.wbufs[threading.currentThread()] = write_buffer
+            self.lock.release()    
+        '''    
+        if bucket.name in write_buffer:
+            #print "\texisting bucket"
+            write_buffer[bucket.name].aggregate(bucket.stat)
+        else:
+            #print "\tvirgin bucket"
+            write_buffer[bucket.name] = bucket
+        return 
 
     def dump(self):
-        self.lock.acquire()
-        try:
-            laststat = self.buf
-            self.buf = {}
-        finally:
-            self.lock.release()
-        data = dict([(k,str(v)) for k,v in laststat.iteritems()])
-        return data
+        # aggregate data across all read buffers
+        send_buffer = {}
+        for th in self.rbufs:
+            #print "dump:found an rbuf"
+            read_buffer = self.rbufs[th]       
+            for name, bucket in read_buffer.iteritems():
+                #print "dump:found a bucket"
+                if name in send_buffer:
+                    #print "dump: existsing agg bucket"
+                    send_buffer[name].aggregate(bucket.stat)
+                else:
+                    #print "dump: virgin agg bucket"
+                    send_buffer[name]=bucket
+            read_buffer.clear()   
+        self.transport.emit(send_buffer)
+        
+    def swap_buffers(self):
+        if self.rbufs == self.left_buffers:
+            self.rbufs = self.right_buffers
+            self.wbufs = self.left_buffers
+        else:
+            self.rbufs = self.left_buffers
+            self.wbufs = self.right_buffers
+    
 
 class CounterBucket(object):
-    def __init__(self, bucket):
-        self.bucket = bucket
-        self.stat = 0
+    def __init__(self, name, stat, rate=1, message=None):
+        self.name = name
+        self.stat = stat
+        self.rate = rate
+        self.message = message
 
     def __str__(self):
         if self.message:
@@ -101,19 +161,18 @@ class CounterBucket(object):
         else:
             return "%s|c" % self.stat
 
-    def aggregate(self, stat, message=None, sample_rate=1):
-        if sample_rate < 1 and random.random() > sample_rate:
-            return self
-        self.stat += int(stat/sample_rate)
-        self.message = message
+    def aggregate(self, stat):
+        # Note:  This is non-standard.  We should not divide this out, but instead send the semple rate upstream (with @rate)
+        self.stat += int(stat/self.rate)
         # for chaining
         return self
 
 class TimerBucket(object):
-    def __init__(self, bucket):
-        self.bucket = bucket
-        self.summstat = 0
-        self.count = 0
+    def __init__(self, name, stat, message=None):
+        self.name = name
+        self.summstat = stat
+        self.count = 1
+        self.message = message
 
     def __str__(self):
         avg = self.summstat/self.count;
@@ -122,16 +181,18 @@ class TimerBucket(object):
         else:
             return "%s|ms" % avg
 
-    def aggregate(self, stat, message=None):
+    def aggregate(self, stat):
         self.summstat += stat
         self.count += 1
-        self.message = message
         # for chaining
         return self
 
 class GaugeBucket(object):
-    def __init__(self, bucket):
-        self.bucket = bucket
+    def __init__(self, name, stat, message=None):
+        self.name = name
+        self.stat = stat
+        self.message = ""
+        self.timestamp=int(time.time())
 
     def __str__(self):
         if self.message:
@@ -139,9 +200,8 @@ class GaugeBucket(object):
         else:
             return "%s|g|%s" % (self.stat, self.timestamp)
 
-    def aggregate(self, stat, message=None):
+    def aggregate(self, stat):
         self.stat = stat
-        self.message = message
         self.timestamp=int(time.time())
         # for chaining
         return self
@@ -150,98 +210,102 @@ class GaugeBucket(object):
 #   Stategy such as where the data is stored and how frequent the stats are sent
 #---------------------------------------------------------------------------
 class GeyserStategy():
-    def __init__(self, interval=20):
-        self.interval = interval
-        self.triggered = False
-
-    def setup(self, func, *args, **kwargs):
-        if self.triggered:
-            return
-        self.triggered = True
-        def wrap_func():
-            try:
-                result = func(*args, **kwargs)
-            finally:
-                self.triggered = False
-            return result
-        self.t = threading.Timer(self.interval, wrap_func)
-        self.t.daemon = True
-        self.t.start()
+    def __init__(self, interval=10):
+        print "deprecated"
 
 class InstantStategy():
-    def setup(self, func, *args, **kwargs):
-        return func(*args, **kwargs)
+    def __init__(self):
+        print "deprecated"
 
 #---------------------------------------------------------------------------
 #   Statsd Client
 #---------------------------------------------------------------------------
 class Statsd(object):
 
-    _buffer = StatsdBuffer()
     _transport = UDPTransport()
-    _strategy = InstantStategy()
+    _aggregator = StatsdAggregator(20, _transport)
+
 
     @staticmethod
     def set_transport(transport):
         Statsd._transport.close()
         Statsd._transport = transport
+        Statsd._aggregator.transport = transport
 
+    @staticmethod
+    def set_aggregation(should_aggregate):
+        #print "setting aggregation to", should_aggregate
+        if should_aggregate and not Statsd._aggregator.running:
+            Statsd._aggregator.start()
+        if not should_aggregate and Statsd._aggregator.running:
+            Statsd._aggregator.stop()
+            
     @staticmethod
     def set_strategy(strategy):
-        Statsd._strategy = strategy
+        # deprecated.  Try to fake it
+        if strategy.__name__ == "GeyserStategy":
+            print "Warning: using deprecated method to enable aggregation"
+            Statsd.set_aggregation(True)
+        else:
+            print "Warning: using deprecated method to disable aggregation"
+            Statsd.set_aggregation(False)
 
     @staticmethod
-    def gauge(bucket, reading, message=None):
+    def gauge(name, reading, message=None):
         """
         Log gauge information
         >>> from client import Statsd
         >>> Statsd.gauge('some.gauge', 500)
         """
-        Statsd._buffer.add(bucket, GaugeBucket, reading, message)
-        Statsd.send()
+        GaugeBucket(name, reading, message)
+        Statsd.send(GaugeBucket(name, reading, message))
 
     @staticmethod
-    def timing(bucket, elapse, message=None):
+    def timing(name, elapse, message=None):
         """
         Log timing information
         >>> from client import Statsd
         >>> Statsd.timing('some.time', 500)
         """
-        Statsd._buffer.add(bucket, TimerBucket, elapse, message)
-        Statsd.send()
+        Statsd.send(TimerBucket(name, elapse, message))
 
     @staticmethod
-    def increment(buckets, sample_rate=1, message=None):
+    def increment(names, sample_rate=1, message=None):
         """
         Increments one or more stats counters
         >>> Statsd.increment('some.int')
         >>> Statsd.increment('some.int',0.5)
         """
-        Statsd.update_stats(buckets, 1, sample_rate, message)
+        Statsd.update_stats(names, 1, sample_rate, message)
 
     @staticmethod
-    def decrement(buckets, sample_rate=1, message=None):
+    def decrement(names, sample_rate=1, message=None):
         """
         Decrements one or more stats counters
         >>> Statsd.decrement('some.int')
         """
-        Statsd.update_stats(buckets, -1, sample_rate, message)
+        Statsd.update_stats(names, -1, sample_rate, message)
 
     @staticmethod
-    def update_stats(buckets, delta=1, sample_rate=1, message=None):
+    def update_stats(names, delta=1, sample_rate=1, message=None):
         """
         Updates one or more stats counters by arbitrary amounts
         >>> Statsd.update_stats('some.int',10)
         """
-        if (type(buckets) is not list):
-            buckets = [buckets]
-        for bucket in buckets:
-            Statsd._buffer.add(bucket, CounterBucket, delta, message, sample_rate)
-        Statsd.send()
+        if sample_rate < 1 and random.random() > sample_rate:
+            return
+        if (type(names) is not list):
+            names = [names]
+        for name in names:
+            Statsd.send(CounterBucket(name, delta, sample_rate, message))
 
     @staticmethod
-    def send():
-        Statsd._strategy.setup(Statsd.flush, Statsd._buffer)
+    def send(bucket):
+        if Statsd._aggregator.running:
+            Statsd._aggregator.add(bucket)
+        else:
+            bucket = [bucket]
+            Statsd._transport.emit(bucket)
 
     @staticmethod
     def flush(buf):
@@ -249,20 +313,19 @@ class Statsd(object):
 
     @staticmethod
     def shutdown():
-        if not Statsd._buffer.is_empty():
-            Statsd.flush(Statsd._buffer)
+        #print "statsd shutdown"
+        Statsd._aggregator.stop()
         Statsd._transport.close()
 
     @staticmethod
-    def time(bucket, enabled=True):
-        """
-        Convenient wrapper.
-        This will count how many this wrapped function is invoked.
+    def time(name, enabled=True):
+        '''
+        Function Decorator to report function execution time.
 
         >>>@Statsd.time("some.timer.bucket")
         >>>def some_func():
         >>>    pass #do something
-        """
+        '''
         def wrap_timer(method):
             if not enabled:
                 return method
@@ -270,27 +333,26 @@ class Statsd(object):
                 start = time.time()
                 result = method(*args, **kwargs)
                 duration = (time.time() - start) * 1000
-                Statsd.timing(bucket, duration)
+                Statsd.timing(name, duration)
                 return result
             return send_statsd
         return wrap_timer
 
     @staticmethod
-    def count(buckets, sample_rate=1, enabled=True):
-        """
-        Convenient wrapper.
-        This will count how many this wrapped function is invoked.
+    def count(name, sample_rate=1, enabled=True):
+        '''
+        Function Decorator to count how many times a function is invoked.
 
         @Statsd.count("some.counter.bucket")
         def some_func():
             pass #do something
-        """
+        '''
         def wrap_counter(method):
             if not enabled:
                 return method
             def send_statsd(*args, **kwargs):
                 result = method(*args, **kwargs)
-                Statsd.increment(buckets, sample_rate)
+                Statsd.increment(name, sample_rate)
                 return result
             return send_statsd
         return wrap_counter

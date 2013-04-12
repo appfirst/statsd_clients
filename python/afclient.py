@@ -130,7 +130,7 @@ class MQSendError(Exception):
         return str(self.msg) + " return errcode %s" % errno.errorcode(self.rc)
 
 Statsd.set_transport(AFTransport())
-Statsd.set_strategy(GeyserStategy())
+Statsd.set_aggregation(True)
 
 if __name__ == "__main__":
 #    import time
