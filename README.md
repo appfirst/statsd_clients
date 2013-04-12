@@ -31,7 +31,7 @@ until you are ready to transition to an AppFirst StatsD library.
 
 We've also extended the capabilities of StatsD, by allowing you to optionally annotate your event reports:
 
-    Statsd.increment("security.suspicious_login", current_username)
+    Statsd.increment("security.suspicious_login", attempted_username)
     
 We provide more details on how to use our StatsD libraries in the readme file found under each language.
 

@@ -6,3 +6,6 @@ upload.py
 
 # a ruby package.  This is a binary
 *.gem
+
+# "compiled" python
+*.pyc

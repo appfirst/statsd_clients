@@ -2,6 +2,13 @@
 
 A Statsd Python Client for use with the [AppFirst](http://www.appfirst.com) collector
 ====================================
+[Statsd is a scheme developed by Etsy](https://github.com/etsy/statsd) that provides 
+a lightweight method of gathering statistics from your applications.  The Appfirst 
+version includes an aggregation capability to reduce the amount of data that must be transported, 
+and data is sent to the AppFirst collector that is running on the same server
+as your application, using a posix message queue.  By default, both of those features are enabled, 
+but the aggregation can be disabled, and the client can be configured to use UDP (like the Etsy-standard) 
+instead of the message queue.
 
 Installation:
 ------------
