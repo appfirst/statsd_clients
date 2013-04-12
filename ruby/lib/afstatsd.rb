@@ -154,7 +154,7 @@ class Statsd
     # @param [String] optional note (AppFirst extension to StatsD)
     def count(stat, count, sample_rate=1, note="")
         if sample_rate == 1 or rand < sample_rate
-            send_metric StatsdMetrics::CMetric.new(expand_name(stat), count, sample_rate, note)
+            send_metric StatsdMetrics::CMetric.new(expand_name(stat), count.round, sample_rate, note)
         end
     end
 
@@ -200,7 +200,7 @@ class Statsd
     # @param [String] optional note (AppFirst extension to StatsD)
     def timing(stat, ms, sample_rate=1, note="")
         if sample_rate == 1 or rand < sample_rate
-            send_metric StatsdMetrics::TMetric.new(expand_name(stat), ms, sample_rate, note)
+            send_metric StatsdMetrics::TMetric.new(expand_name(stat), ms.round, sample_rate, note)
         end    
     end
 

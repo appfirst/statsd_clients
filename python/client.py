@@ -267,7 +267,7 @@ class Statsd(object):
         >>> from client import Statsd
         >>> Statsd.timing('some.time', 500)
         """
-        Statsd.send(TimerBucket(name, elapse, message))
+        Statsd.send(TimerBucket(name, int(round(elapse)), message))
 
     @staticmethod
     def increment(names, sample_rate=1, message=None):
@@ -297,7 +297,7 @@ class Statsd(object):
         if (type(names) is not list):
             names = [names]
         for name in names:
-            Statsd.send(CounterBucket(name, delta, sample_rate, message))
+            Statsd.send(CounterBucket(name, int(round(delta)), sample_rate, message))
 
     @staticmethod
     def send(bucket):
