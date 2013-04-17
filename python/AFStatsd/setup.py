@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='AFStatsd',
-    version='0.1.0',
+    version='0.1.1',
     author='Clark Bremer',
     author_email='clark@appfirst.com',
     packages=['afstatsd', 'afstatsd.test'],

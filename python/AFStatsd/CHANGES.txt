@@ -1,1 +1,1 @@
-v0.1.0, 4/16/2013 -- Initial Release.
+v0.1.1, 4/17/2013 -- Fix up __init__.py to make the import cleaner.

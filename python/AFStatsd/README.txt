@@ -12,7 +12,11 @@ instead of the message queue.
 
 Installation:
 ------------
-Place the following files in your project directory:
+using pip:
+    
+    pip install afstatsd
+
+Manually: place the following files in your project directory:
 
     client.py
     afclient.py
@@ -23,7 +27,7 @@ Configuration:
 
 Pull in the AppFirst Statsd Client (probably in your main module):
 
-    from afclient import Statsd
+    from afstatsd import Statsd
 
 This will instantiate a default Statsd client with default configuration.  By default, 
 the client will use the message queue transport and aggregation will be enabled.
