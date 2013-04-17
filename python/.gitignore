@@ -1,1 +1,5 @@
 *.pyc
+# MANIFEST for PYPi package gets generated automatically from MANIFEST.IN
+AFStatsd/MANIFEST
+# tarballs for PYPi get generated automatically
+AFStatsd/dist/*
