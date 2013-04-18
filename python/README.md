@@ -55,7 +55,7 @@ implementation:
     Statsd.set_transport(UDPTransport())
 
 The IP address and udp port number are configured in local_settings.py.  Once these 
-configuration attributes are set, the client is threadsafe for general usage.
+configuration attributes are set, the client is thread safe for general usage.  Please be aware that the client will create a python thread to run the aggregation function.  As you know, you should not call os.fork() if python threads are running, so if you use multiprocessing, import the statsd library *after* you fork.  
 
 Usage:
 -----
