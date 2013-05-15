@@ -304,7 +304,7 @@ class Statsd(object):
         if Statsd._aggregator.running:
             Statsd._aggregator.add(bucket)
         else:
-            bucket = [bucket]
+            bucket = {bucket.name : bucket}
             Statsd._transport.emit(bucket)
 
     @staticmethod
