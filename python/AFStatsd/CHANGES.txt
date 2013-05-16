@@ -1,1 +1,1 @@
-v0.1.1, 4/17/2013 -- Fix up __init__.py to make the import cleaner.
+v0.1.2, 5/15/2013 -- Fix bug when aggreagation turned off.
