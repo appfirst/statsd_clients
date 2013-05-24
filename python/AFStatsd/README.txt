@@ -51,7 +51,8 @@ capability.
 This statsd client can also send data the 'Etsy standard' way using a UDP socket.  This 
 can be useful if transistioning from some other statsd implementation to the AppFirst 
 implementation:
-
+    
+    from afstatsd.client import UDPTransport
     Statsd.set_transport(UDPTransport())
 
 The IP address and udp port number are configured in local_settings.py.  Once these 

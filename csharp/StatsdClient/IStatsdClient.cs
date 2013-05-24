@@ -1,10 +1,15 @@
-﻿namespace Statsd
+﻿using System.Collections.Generic;
+
+namespace Statsd
 {
     public interface IBucket
     {
         string Name { get; set; }
+        int Stat { get; set; }
+        HashSet<string> Msgs { get; }
 
         void Infuse(int value, string message);
+        void Infuse(int value, HashSet<string> msgs);
     }
 
     public interface IStatsdClient

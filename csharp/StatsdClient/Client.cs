@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Timers;
+using System.Threading;
 
 
 namespace Statsd
@@ -119,43 +119,72 @@ namespace Statsd
         #endregion
     }
 
+
+    // To avoid obtaiing a lock on every add, we use two sets of buffers.  One only 
+    // used for reads, the other only used for writes.  Periodically, we swap them.
+    // If multi-threaded, each thread will have it's own pair.  
+    // Details in BucketBuffer, in Buckets.cs
     public class BufferedStrategy : IStrategy
     {
         private static BucketBuffer buffer = new BucketBuffer();
-        private static Timer schedule = new Timer();
-        public double Interval = 20000;
+        public static int Interval = 20000;
         private static SendDelegate doSend;
+        private static Thread bg_thread = new Thread(background);
 
         static BufferedStrategy()
         {
             AppDomain domain = AppDomain.CurrentDomain;
-            domain.ProcessExit += new EventHandler(Flush);
-
-            schedule.AutoReset = false;
-            schedule.Elapsed += new ElapsedEventHandler(Flush);
+            domain.ProcessExit += new EventHandler(FlushFlushDone);
         }
 
-        public BufferedStrategy(){}
+        public BufferedStrategy()
+        {
+            this.start();
+        }
 
         public BufferedStrategy(int interval)
         {
-            this.Interval = interval;
+            Interval = interval;
+            this.start();
         }
 
-        private static void Flush(object sender, EventArgs e)
+        private static void background()
         {
-            if (schedule.Enabled)
+            while (true)
             {
-                schedule.Stop();
+                Thread.Sleep(Interval / 2);
+                buffer.SwapBuffers();
+                Thread.Sleep(Interval / 2);
+                Flush();
             }
-            if (!buffer.IsEmpty())
+        }
+
+        private void start()
+        {
+            bg_thread.IsBackground = true;
+            bg_thread.Start();
+        }
+
+        private static void stop()
+        {
+            bg_thread.Abort();
+        }
+
+        public static void Flush()
+        {
+            Dictionary<String, IBucket> dumpcellar = buffer.Dump();
+            foreach (IBucket bucket in dumpcellar.Values)
             {
-                Dictionary<String, IBucket> dumpcellar = buffer.Dump();
-                foreach (IBucket bucket in dumpcellar.Values)
-                {
-                    doSend(bucket.ToString());
-                }
+                doSend(bucket.ToString());
             }
+        }
+
+        private static void FlushFlushDone(object sender, EventArgs e)
+        {
+            Flush();
+            buffer.SwapBuffers();
+            Flush();
+            //stop();
         }
 
         public bool Emit<T>(SendDelegate doSend, string bucketname, int value, string message) 
@@ -164,11 +193,6 @@ namespace Statsd
             BufferedStrategy.doSend = doSend;
             buffer.Accumulate<T>(bucketname, value, message);
             
-            if (!schedule.Enabled)
-            {
-                schedule.Interval = this.Interval;
-                schedule.Start();
-            }
 
             return true;
         }

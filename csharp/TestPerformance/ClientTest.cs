@@ -44,11 +44,12 @@ namespace TestPerformance
         public void SendMessages(Object threadContext)
         {
             int threadIndex = (int)threadContext;
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 10000000; i++)
             {
                 //Thread.Sleep(r.Next(5));
                 DateTime start = DateTime.Now;
-                statsd.Increment(bucketPrefix + "threadpool.thread" + threadIndex);
+                statsd.Increment(bucketPrefix + "threadpool.thread");
+//                statsd.Increment(bucketPrefix + "threadpool.thread" + threadIndex);
                 int elapsedTimeMillis = Convert.ToInt32((DateTime.Now - start).TotalMilliseconds);
                 statsd.Timing(bucketPrefix + "threadpool.incr_time", elapsedTimeMillis);
             }
@@ -58,7 +59,7 @@ namespace TestPerformance
 
     class Program
     {
-        const string bucketPrefix = "csharp.test.";
+        const string bucketPrefix = "test.csharp.";
 
         static Random r = new Random();
 
@@ -89,6 +90,26 @@ namespace TestPerformance
 			    }
 		    }
 	    }
+
+        static void TestMultiThreading2()
+        {
+            Console.WriteLine("TestMultiThreading (CB)");
+            DateTime start = DateTime.Now;
+            ManualResetEvent[] doneEvents = new ManualResetEvent[10];
+            StatsdPipe statsd = new StatsdPipe();
+            //statsd.Transport = new TransportMock();
+            statsd.Strategy = new BufferedStrategy(2000);
+            for (int i = 0; i < doneEvents.Length; i++)
+            {
+                doneEvents[i] = new ManualResetEvent(false);
+                ThreadPoolStatsd tps = new ThreadPoolStatsd(doneEvents[i], bucketPrefix, statsd);
+                ThreadPool.QueueUserWorkItem(tps.SendMessages, i);
+            }
+
+            WaitHandle.WaitAll(doneEvents);
+            int elapsedTimeMillis = Convert.ToInt32((DateTime.Now - start).TotalMilliseconds);
+            Console.WriteLine("Test took: " + elapsedTimeMillis + " msec");
+        }
 
         static void TestMultiThreading()
         {
@@ -133,6 +154,21 @@ namespace TestPerformance
             }
         }
 
+        static void SendMany()
+        {
+            Console.WriteLine("SendMany");
+            DateTime start = DateTime.Now;
+            StatsdPipe statsd = new StatsdPipe();
+            statsd.Strategy = new BufferedStrategy(5000);
+            for (int i = 0; i < 100000000; i++ )
+            {
+                //Thread.Sleep(1);
+                statsd.Increment(bucketPrefix + "mailslot");
+            }
+            int elapsedTimeMillis = Convert.ToInt32((DateTime.Now - start).TotalMilliseconds);
+            Console.WriteLine("Test took: " + elapsedTimeMillis + " msec");
+        }
+
         static void SendingWithoutGeyserStrategy()
         {
             Console.WriteLine("SendingWithoutGeyserStrategy");
@@ -175,11 +211,14 @@ namespace TestPerformance
 
         static void Main(string[] args)
         {
+            //TestBasic();
+            //SendMany();
             //TestUnderPressure();
             //TestMultiThreading();
+            TestMultiThreading2();
             //ShowExample(new StatsdPipe());
             //SendingWithGeyserStrategy();
-            SendingWithoutGeyserStrategy();
+            //SendingWithoutGeyserStrategy();
             //MailSlotTest.TestMailSlot();
         }
     }
