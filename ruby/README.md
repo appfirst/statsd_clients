@@ -25,7 +25,7 @@ Configuration:
 --------------
 Pull in the AppFirst Statsd Client (probably in your main module):
 
-    require 'afstatd'
+    require 'afstatsd'
 
 At startup, instantiate a Statsd client object:
 
@@ -82,12 +82,28 @@ Usage:
 Now comes the fun part.  Just sprinkle these one-liners throughout your 
 application code to report metrics to your AppFirst application or dashboard:
 
+
+<h3>counters</h3>
+
+	def increment(name, sample_rate=1, note="")
+	def decrement(stat, sample_rate=1, note="")
+	def count(stat, count, sample_rate=1, note="")
+
+<h3>timers</h3>
+
+	def timing(stat, ms, sample_rate=1, note="")
+	def time(stat, sample_rate=1, note="")
+	
+<h3>gauges</h3>
+
+	def gauge(stat, value, note="")
+
 Examples:
 --------- 
 	$statsd.increment 'foo'  						        # increment event counter 'foo'.
 	$statsd.decrement 'manchu'						        # decrement event counter 'manchu'.
 	$statsd.count 'mustache', 10 						    # report that event 'mustache' ocurred 10 times.
-	$statsd.gauge 'buffers_left' buffer_pool.count	        # report a value as a guage
+	$statsd.gauge 'buffers_left', buffer_pool.count	        # report a value as a guage
     $statsd.time 'cart_process_time' {cart_processing}      # will report the execution time of	a block
 
 The easiset statsd metric to use is *increment*.  You don't have to track anything yourself in your application.  Just fire off that one-liner 
