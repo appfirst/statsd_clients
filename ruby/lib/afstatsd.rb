@@ -1,7 +1,7 @@
 require 'socket'
 require 'forwardable'
 require 'rubygems'
-require 'posix_mq'
+require 'posix_mq' if RUBY_PLATFORM =~ /linux/i
 require 'afstatsd/statsd_metrics'
 require 'afstatsd/statsd_aggregator'
 require 'monitor'
@@ -64,7 +64,11 @@ class Statsd
         @prefix = nil
         @postfix = nil
         @aggregator = StatsdAggregator.new(interval)
-        set_transport :mq_transport
+	if RUBY_PLATFORM =~ /linux/i
+            set_transport :mq_transport
+        else
+            set_transport :udp_transport
+        end
         self.aggregating = true unless interval == 0
         @dropped = 0
         @debugging = false
