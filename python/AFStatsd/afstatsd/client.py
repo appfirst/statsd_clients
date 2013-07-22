@@ -131,7 +131,7 @@ class StatsdAggregator(object):
             for name, bucket in read_buffer.iteritems():
                 #print "dump:found a bucket"
                 if name in send_buffer:
-                    #print "dump: existsing agg bucket"
+                    #print "dump: existing agg bucket"
                     send_buffer[name].aggregate(bucket.stat)
                 else:
                     #print "dump: virgin agg bucket"

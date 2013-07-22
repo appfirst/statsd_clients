@@ -69,13 +69,7 @@ class Statsd
         else
             set_transport :udp_transport
         end
-        
-        if interval == 0 || defined?(PhusionPassenger)
-          self.aggregating = false
-        else  
-          self.aggregating = true 
-        end  
-        
+        self.aggregating = true unless interval == 0
         @dropped = 0
         @debugging = false
     end

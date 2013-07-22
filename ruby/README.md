@@ -66,7 +66,7 @@ or perhaps:
 	$statsd.namespace = 'system.#{Socket.gethostname}.component'
 
 This statsd client can also send data the 'Etsy standard' way using a UDP socket.  This 
-can be useful if transistioning from some other statsd implementation to the AppFirst 
+can be useful if transitioning from some other statsd implementation to the AppFirst 
 implementation:
 
     $statsd.set_transport(:udp_transport)
@@ -106,9 +106,18 @@ Examples:
 	$statsd.gauge 'buffers_left', buffer_pool.count	        # report a value as a guage
     $statsd.time 'cart_process_time' {cart_processing}      # will report the execution time of	a block
 
-The easiset statsd metric to use is *increment*.  You don't have to track anything yourself in your application.  Just fire off that one-liner 
+The easiest statsd metric to use is *increment*.  You don't have to track anything yourself in your application.  Just fire off that one-liner 
 for every event, you want to monitor, and the upstream apparatus will take care of everything for you.
     
 If you are already keeping track of something, you should report that with a *gauge*. 
     
 To report how long something took to execute, use the *time* metric.
+
+<h3>Logging:</h3>
+
+To attach a logger to the statsd client:
+
+    require 'logger'
+    ...
+    Statsd.logger ||= Logger.new 'afstatsd.log'
+    Statsd.logger.level = Logger::DEBUG

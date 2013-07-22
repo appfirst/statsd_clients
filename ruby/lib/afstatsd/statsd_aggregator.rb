@@ -19,6 +19,8 @@
         @right_buffers = {}       #   each buffer group is a hash
         @rbufs = @left_buffers    # buffer group currently being read from
         @wbufs = @right_buffers   # buffer group currently being written to
+
+        # register for at_exit call back, so we can flush our buffers
         at_exit do
             if @running
                 flush_buffers 
@@ -26,11 +28,42 @@
                 flush_buffers
             end 
         end
+
+        # in Rails, under PhusionPassener, we may be spun up in a new process,
+        # so we have to restart our background thread.
+        if defined?(PhusionPassenger)
+            PhusionPassenger.on_event(:starting_worker_process) do |forked|
+                if forked
+                    Statsd.logger.debug {"PHUSION Forked! pid:#{Process.pid}"} if Statsd.logger
+                    self.start(nil, true) if @running
+                end 
+            end        
+        end
+
+        if RUBY_PLATFORM =~ /linux/i
+            Signal.trap("QUIT") {flush_on_signal("QUIT")}
+            Signal.trap("HUP")  {flush_on_signal("HUP")}
+            Signal.trap("STOP") {flush_on_signal("STOP")}
+            Signal.trap("TERM") {flush_on_signal("TERM")}
+            Signal.trap("EXIT") {flush_on_signal("EXIT")}
+            Signal.trap("KILL") {flush_on_signal("KILL")}
+            Signal.trap("ABRT") {flush_on_signal("ABRT")}
+        end
+
+        def flush_on_signal(sig)
+            Statsd.logger.debug {"Got signal #{sig}   pid:#{Process.pid}"} if Statsd.logger
+            if @running
+                flush_buffers
+                swap_buffers
+                flush_buffers
+            end
+        end
     end    
 
-    def start(transport)
-        @transport = transport
-        return if @running  # already started
+    def start(transport, force_restart=false)
+        Statsd.logger.debug {"START    pid:#{Process.pid}"} if Statsd.logger
+        @transport = transport if force_restart==false
+        return if @running if force_restart==false # already started
         # Spin up a thread to periodically send the aggregated stats.
         # Divide the interval in half to allow other threads to finish
         # their writes after we swap, and before we start reading.
@@ -69,6 +102,7 @@
     def add(metric)
         # We should have a write buffer assigned to our thread.  
         # Create one if not.
+        #Statsd.logger.debug {"ADD      pid:#{Process.pid}"} if Statsd.logger
         unless write_buffer = @wbufs[Thread.current]
             #puts "Thread #{Thread.current}: creating write_buffer"
             write_buffer = {}
@@ -94,6 +128,7 @@
     # so any writes in progress after the swap will have time to complete.
 
     def swap_buffers 
+        #Statsd.logger.debug {"SWAP     pid:#{Process.pid}"} if Statsd.logger
         if @rbufs == @left_buffers
             @rbufs = @right_buffers
             @wbufs = @left_buffers
@@ -104,6 +139,7 @@
     end
     
     def flush_buffers
+        # Statsd.logger.debug {"FLUSH    pid:#{Process.pid}"} if Statsd.logger
         # Each thread has it's own read buffer.  If it's empty, the
         # thread might be dead.  We'll delete it's read buffer.
         @rbufs.delete_if { |k, rb| rb.empty? }
@@ -125,6 +161,7 @@
         end    
         #puts "nothing to send" if send_buffer.empty? 
         send_buffer.each_value do |metric|
+        #Statsd.logger.debug {"    transporting metric #{metric.to_s}"} if Statsd.logger
             @transport.call(metric)
         end    
     end
