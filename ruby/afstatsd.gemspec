@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
     s.description   = "A StatsD library with AppFirst Extensions"
     s.authors       = ["Clark Bremer"]
     s.email         = 'clark@appfirst.com'
-    s.licence	    = 'APACHE'
+    s.license	    = 'APACHE'
     s.files         = ["lib/afstatsd.rb", 
                        "lib/afstatsd/statsd_aggregator.rb",
                        "lib/afstatsd/statsd_metrics.rb",
