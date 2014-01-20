@@ -28,7 +28,7 @@ Configuration:
 Pull in the AppFirst Statsd Client (probably in your main module):
 
 ```python
-from afstatd import Statsd
+from afstatsd import Statsd
 ```
 
 This will instantiate a default Statsd client with default configuration. By default,
