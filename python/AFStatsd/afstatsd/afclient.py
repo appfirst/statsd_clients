@@ -17,6 +17,15 @@ STATSD_SEVERITY = 3
 
 LOGGER = None
 
+
+def _isWindows():
+    return sys.platform.startswith("win")
+
+if _isWindows():
+  import win32file
+  import win32con
+
+
 def set_logger(logger):
     global LOGGER
     LOGGER = logger
@@ -48,20 +57,30 @@ class AFTransport(UDPTransport):
             self.mqueue = None
 
     def _createQueue(self):
-        if not self.shlib:
-            if sys.version_info < (2, 5):
-                raise MQError("Statsd Error: require python 2.5 or greater but using %s.%s" %
-                              (sys.version_info[0], sys.version_info[1]))
-            else:
-                raise MQError("Statsd Error: native support for AFTransport is not available")
-        try:
-            self.mqueue = self.shlib.mq_open(self.mqueue_name, self.flags)
-            if LOGGER:
-                LOGGER.info("Statsd mqueue %s opened successfully" % self.mqueue)
-            if (self.mqueue < 0):
-                raise MQError("Statsd Error: AFCollector not installed")
-        except Exception, e:
-            raise MQError("Statsd Error: unknown error occur when open mqueue")
+        if _isWindows():
+            try:
+                self.mqueue = win32file.CreateFile(r'\\.\mailslot\%s' % self.mqueue_name,win32file.GENERIC_WRITE, win32file.FILE_SHARE_READ, None, win32con.OPEN_EXISTING, 0, None)
+                if LOGGER:
+                    LOGGER.info("Statsd mqueue %s opened successfully" % self.mqueue)
+                if (self.mqueue < 0):
+                    raise MQError("Statsd Error: AFCollector not installed")
+            except Exception, e:
+                raise MQError("Statsd Error: unknown error occur when open mqueue %s" % e)
+        else:    
+            if not self.shlib:
+                if sys.version_info < (2, 5):
+                    raise MQError("Statsd Error: require python 2.5 or greater but using %s.%s" %
+                                  (sys.version_info[0], sys.version_info[1]))
+                else:
+                    raise MQError("Statsd Error: native support for AFTransport is not available")
+            try:
+                self.mqueue = self.shlib.mq_open(self.mqueue_name, self.flags)
+                if LOGGER:
+                    LOGGER.info("Statsd mqueue %s opened successfully" % self.mqueue)
+                if (self.mqueue < 0):
+                    raise MQError("Statsd Error: AFCollector not installed")
+            except Exception, e:
+                raise MQError("Statsd Error: unknown error occur when open mqueue")
 
     def emit(self, data):
         if self.verbosity:
@@ -91,22 +110,35 @@ class AFTransport(UDPTransport):
             send_data = "%s:%s" % (stat, value)
             mlen = min(len(send_data), self.msgLen)
             post = send_data[:mlen]
+
+            rc = 0
             if self.verbosity:
                 print mlen, post
-            rc = self.shlib.mq_send(self.mqueue, post, len(post), STATSD_SEVERITY)
-            if (rc < 0):
-                errornumber = ctypes.get_errno()
-                if errno.errorcode[errornumber] != "EAGAIN":
-                    errmsg = os.strerror(errornumber)
+            if _isWindows():
+                data_string = u"%s:%s:%s" % (os.getpid(), 3, unicode(post))
+                data_bytes = bytearray(data_string.encode('utf-16'));
+                (rc, nBytesWritten) = win32file.WriteFile(self.mqueue, data_bytes, None)
+                if (rc < 0):    
                     if LOGGER:
                         LOGGER.error(u"Statsd Error: failed to mq_send %s" % errmsg)
+            else:
+                rc = self.shlib.mq_send(self.mqueue, post, len(post), STATSD_SEVERITY)
+                if (rc < 0):
+                    errornumber = ctypes.get_errno()
+                    if errno.errorcode[errornumber] != "EAGAIN":
+                        errmsg = os.strerror(errornumber)
+                        if LOGGER:
+                            LOGGER.error(u"Statsd Error: failed to mq_send %s" % errmsg)
 
     def close(self):
         if self.mqueue:
             if LOGGER:
                 LOGGER.warning(u"mq %s is being closed" % self.mqueue_name)
             try:
-                _ = self.shlib.mq_close(self.mqueue)
+                if _isWindows():
+                    self.mqueue.Close()
+                else:
+                    _ = self.shlib.mq_close(self.mqueue)
             except Exception, e:
                 pass
             self.mqueue = None
@@ -152,3 +184,4 @@ if __name__ == "__main__":
         do_nothing()
 #        print "count %s" % count
         count += 1
+	
