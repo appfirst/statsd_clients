@@ -1,7 +1,9 @@
 import unittest
 from mock import MagicMock
+
 from client import Statsd, UDPTransport
 from afclient import AFTransport
+
 
 class StatsdClientTest(unittest.TestCase):
     def test_build_message(self):
@@ -10,15 +12,9 @@ class StatsdClientTest(unittest.TestCase):
         # no nothing
         self.assertEqual(Statsd._build_message({"test":"1|c"}),{'test': '1|c'})
 
-        # with message
-        self.assertEqual(Statsd._build_message({"test":"1|c"}, 1, "hello"),
-                         {"test":"1|c||hello"})
         # with timestamp
         self.assertEqual(Statsd._build_message({"testg":"1|g"}, 1, timestamp=1339793258),
                          {"testg":"1|g|1339793258"})
-        # with timestamp and message
-        self.assertEqual(Statsd._build_message({"testg":"1|g"}, 1, "hello",1339793258),
-                         {"testg":"1|g|1339793258|hello"})
 
     def test_AFTransport(self):
         shlib = MagicMock()
@@ -47,8 +43,8 @@ class StatsdClientTest(unittest.TestCase):
         transport = AFTransport(useUDP=True)
         Statsd.set_transport(transport)
 
-#        shlib.mq_open.return_value = 1
-#        shlib.mq_send.return_value = 0
+        #shlib.mq_open.return_value = 1
+        #shlib.mq_send.return_value = 0
 
         Statsd.increment("mqtest")
         self.assertEqual(shlib.mq_open.call_count, 0)

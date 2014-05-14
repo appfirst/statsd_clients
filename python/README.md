@@ -6,7 +6,7 @@ A Statsd Python Client for use with the [AppFirst](http://www.appfirst.com) coll
 a lightweight method of gathering statistics from your applications. The Appfirst
 version includes an aggregation capability to reduce the amount of data that must be transported,
 and data is sent to the AppFirst collector that is running on the same server
-as your application, using a posix message queue. By default, both of those features are enabled,
+as your application, using a POSIX message queue. By default, both of those features are enabled,
 but the aggregation can be disabled, and the client can be configured to use UDP (like the Etsy-standard)
 instead of the message queue.
 
@@ -61,24 +61,30 @@ from afstatsd.client import UDPTransport
 Statsd.set_transport(UDPTransport())
 ```
 
-The IP address and udp port number are configured in local_settings.py. Once these
-configuration attributes are set, the client is thread safe for general usage. Please be aware that the client will create a python thread to run the aggregation function. As you know, you should not call os.fork() if python threads are running, so if you use multiprocessing, import the statsd library *after* you fork.
+The IP address and UDP port number are configured in local_settings.py. Once these
+configuration attributes are set, the client is thread safe for general usage.
+Please be aware that the client will create a python thread to run the aggregation
+function. As you know, you should not call os.fork() if python threads are running,
+so if you use multiprocessing, import the statsd library *after* you fork.
 
 Usage:
 -----
-The simplest StatsD metric is `increment`. It simply keeps a running tally of how many times each counter name gets incremented during each time period. To keep track of a value like number of threads and update it periodically, report that using a `gauge`, since a gauge won't be reset after each reporting interval. To report how long something took to execute, use the `timing` metric.
+The simplest StatsD metric is `increment`. It simply keeps a running tally of
+how many times each counter name gets incremented during each time period. To
+keep track of a value like number of threads and update it periodically, report
+that using a `gauge`, since a gauge won't be reset after each reporting interval.
+To report how long something took to execute, use the `timing` metric.
 
-The StatsD variable name can be any string. It is most common to use dot-notation namespaces like `shopping.checkout.payment_time` or `website.pageviews`.
+The StatsD variable name can be any string. It is most common to use
+dot-notation namespaces like `shopping.checkout.payment_time` or `website.pageviews`.
 
 **Counters:**
 
 ```python
 # increment the counter 'af.example.counter'
 Statsd.increment('af.example.counter')
-# Annotate the increment with an associated message
-Statsd.increment('af.example.login', message=username)
 # Decrement the counter
-Statsd.decrement('af.example.counter', message='Message text')
+Statsd.decrement('af.example.counter')
 ```
 
 **Gauges:**
@@ -86,15 +92,13 @@ Statsd.decrement('af.example.counter', message='Message text')
 ```python
 # set the value of the gauge to 100
 Statsd.gauge('af.example.gauge', 100)
-# Update the value and include a message
-Statsd.gauge('af.example.gauge', 50, message='Process Exited')
+# Update the value
+Statsd.gauge('af.example.gauge', 50)
 ```
 
 **Timers:** *(Time should be reported in milliseconds)*
 
 ```python
-# Report that an action took 500 milliseconds
-Statsd.timing('example_timer', 500)
-# report that a checkout took 237 milliseconds and annotate the username
-Statsd.timing('ecommerce.checkout', 237, message=username)
+# report that an action took 237 milliseconds
+Statsd.timing('ecommerce.checkout', 237)
 ```
