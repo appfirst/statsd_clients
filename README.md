@@ -38,10 +38,10 @@ AppFirst Statsd Clients
 -----------------------
 StatsD libraries with AppFirst extensions are available here in the following languages:
 
-    java
-    python
-    .net (csharp)
-    ruby
+    C#
+    Python
+    Ruby
+    Java
 
 Etsy-standard Statsd libraries are available in many other languages, and we have collected a few of them
 here for your convenience.
