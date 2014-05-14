@@ -12,6 +12,8 @@ instead of the message queue.
 
 Installation:
 ------------
+This AppFirst Python client supports Python 2.6+ including Python 3.
+
 Using pip:
 
     $ pip install afstatsd

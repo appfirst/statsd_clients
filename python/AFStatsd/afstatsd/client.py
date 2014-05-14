@@ -7,6 +7,8 @@ Created on Jun 14, 2012
 @co-author: yangming <yangming@appfirst.com>
 http://www.appfirst.com
 
+Updated for Python 3 May 14, 2014 by michael@appfirst.com
+
 Python client for AppFirst Statsd+
 this file expects local_settings.py to be in the same dir, with statsd host and port information:
 
