@@ -1,0 +1,33 @@
+{
+  "name": "afstatsd",
+  "version": "0.0.1",
+  "description": "A StatsD client for use with the AppFirst collector",
+  "main": "lib/main.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/appfirst/statsd_clients.git"
+  },
+  "keywords": [
+    "appfirst",
+    "statsd"
+  ],
+  "author": "Mike Okner",
+  "license": "Apache",
+  "bugs": {
+    "url": "https://github.com/appfirst/statsd_clients/issues"
+  },
+  "homepage": "https://github.com/appfirst/statsd_clients",
+  "dependencies": {
+    "pmq": ""
+  },
+  "devDependencies": {
+    "mocha": "",
+    "should": ""
+  }
+}
