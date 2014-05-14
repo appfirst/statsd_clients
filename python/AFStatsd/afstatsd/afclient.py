@@ -92,6 +92,11 @@ class AFTransport(UDPTransport):
             self._handleError(data, str(e))
 
     def _emit(self, data):
+        """
+        Actually send the data to the collector via the POSIX mq.
+        Try bundling multiple messages into one if they won't exceed the max size
+        """
+        to_post_list = []
         for name, value in data.items():
             send_data = "{0}:{1}".format(name, value)
             if PYTHON3:
@@ -101,6 +106,22 @@ class AFTransport(UDPTransport):
             post = send_data[:mlen]
             if self.verbosity and LOGGER:
                 LOGGER.info("Sending data: {0}".format(repr(post)))
+
+            if len(to_post_list) == 0:
+                to_post_list.append(post)
+            else:
+                previous = to_post_list[-1]
+                combined = "{0}::{1}".format(previous, post)
+                if PYTHON3:
+                    combined = combined.encode('ascii')
+                if len(combined) > self.msgLen:
+                    # Combined message would be too long
+                    to_post_list.append(post)
+                else:
+                    # Combine messages to use less space in POSIX mq
+                    to_post_list[-1] = combined
+        
+        for post in to_post_list:
             rc = self.shlib.mq_send(self.mqueue, post, len(post), STATSD_SEVERITY)
             if (rc < 0):
                 errornumber = ctypes.get_errno()
@@ -108,6 +129,8 @@ class AFTransport(UDPTransport):
                     errmsg = os.strerror(errornumber)
                     if LOGGER:
                         LOGGER.error("Statsd Error: failed to mq_send {0}".format(errmsg))
+                elif LOGGER:
+                    LOGGER.error("StatsD queue full; Failed to send message: {0}".format(post))
 
     def close(self):
         if self.mqueue:
