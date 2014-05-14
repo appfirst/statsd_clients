@@ -18,6 +18,7 @@ import errno
 
 from .client import UDPTransport, Statsd
 
+PYTHON3 = sys.version_info[0] == 3
 STATSD_SEVERITY = 3
 LOGGER = None
 
@@ -31,8 +32,8 @@ class AFTransport(UDPTransport):
     def __init__(self, use_udp=True, verbosity=False, logger=None):
         set_logger(logger)
         self.mqueue_name = "/afcollectorapi"
-        if sys.version_info[0] == 3:
-            # Convert from Python 3's unicode
+        if PYTHON3:
+            # Convert from Python 3's default unicode
             self.mqueue_name = self.mqueue_name.encode('ascii')
         self.flags = 0o4001
         self.msgLen = 2048
@@ -91,13 +92,15 @@ class AFTransport(UDPTransport):
             self._handleError(data, str(e))
 
     def _emit(self, data):
-        for stat in data.keys():
-            value = data[stat]
-            send_data = "{0}:{1}".format(stat, value)
+        for name, value in data.items():
+            send_data = "{0}:{1}".format(name, value)
+            if PYTHON3:
+                # Unicode not currently supported
+                send_data = send_data.encode('ascii')
             mlen = min(len(send_data), self.msgLen)
             post = send_data[:mlen]
             if self.verbosity and LOGGER:
-                LOGGER.info("Sending data: {0}".format(post))
+                LOGGER.info("Sending data: {0}".format(repr(post)))
             rc = self.shlib.mq_send(self.mqueue, post, len(post), STATSD_SEVERITY)
             if (rc < 0):
                 errornumber = ctypes.get_errno()
