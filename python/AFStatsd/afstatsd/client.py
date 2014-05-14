@@ -35,22 +35,18 @@ class UDPTransport(object):
         """
         Squirt the metrics over UDP
         """
-        try:
-            import local_settings
-            host = local_settings.statsd_host
-            port = local_settings.statsd_port
-            addr=(host, port)
-        except:
-            sys.exit(1)
+        import local_settings
+        host = local_settings.statsd_host
+        port = local_settings.statsd_port
+        addr=(host, port)
 
         udp_sock = socket(AF_INET, SOCK_DGRAM)
         try:
-            for stat in data.keys():
-                value = data[stat]
-                send_data = "{0}:{1}".format(stat, value)
+            for name, value in data.items():
+                send_data = "{0}:{1}".format(name, value)
                 udp_sock.sendto(send_data, addr)
         except Exception as e:
-            print("Unexpected error: {0.__class__.__name__}: {0}".format(e))
+            sys.stderr.write("Error emitting stats over UDP: {0.__class__.__name__}: {0}\n".format(e))
             pass  # we don't care
 
     def close(self):
@@ -168,6 +164,10 @@ class CounterBucket(object):
         return "{0}|c".format(self.stat)
 
     def aggregate(self, stat):
+        """
+        CounterBuckets are aggregated by adding new values to
+        the current value.
+        """
         # Note: This is non-standard. We should not divide this out,
         #  but instead send the semple rate upstream (with @rate)
         self.stat += int(stat/self.rate)
@@ -177,15 +177,19 @@ class CounterBucket(object):
 class TimerBucket(object):
     def __init__(self, name, stat):
         self.name = name
-        self.summstat = stat
+        self.stat = stat
         self.count = 1
 
     def __str__(self):
-        avg = self.summstat/self.count;
+        avg = self.stat/self.count;
         return "{0}|ms".format(avg)
 
     def aggregate(self, stat):
-        self.summstat += stat
+        """
+        TimerBuckets are aggregated by adding new time values to the existing
+        time values and incrementing a counter used to get an average time.
+        """
+        self.stat += stat
         self.count += 1
         return self  # for chaining
 
@@ -200,8 +204,12 @@ class GaugeBucket(object):
         return "{0}|g|{1}".format(self.stat, self.timestamp)
 
     def aggregate(self, stat):
+        """
+        GuageBuckets are updated by setting the current gauge value to the new
+        value. No actual aggregation is done.
+        """
         self.stat = stat
-        self.timestamp=int(time.time())
+        self.timestamp = int(time.time())
         return self  # for chaining
 
 
@@ -249,7 +257,7 @@ class Statsd(object):
         """
         Increments one or more stats counters
         >>> Statsd.increment('some.int')
-        >>> Statsd.increment('some.int',0.5)
+        >>> Statsd.increment('some.int', 0.5)
         """
         Statsd.update_stats(names, 1, sample_rate)
 
@@ -265,7 +273,11 @@ class Statsd(object):
     def update_stats(names, delta=1, sample_rate=1):
         """
         Updates one or more stats counters by arbitrary amounts
-        >>> Statsd.update_stats('some.int',10)
+        >>> Statsd.update_stats('some.int', 10)
+
+        Sample rate is a decimal value representing the proportion of stats
+        to keep. For example, if sample_rate is 0.5, then 50% of stats will
+        be discarded. Default value is 1 and does not discard any stats.
         """
         if sample_rate < 1 and random.random() > sample_rate:
             return
@@ -296,9 +308,9 @@ class Statsd(object):
         """
         Function Decorator to report function execution time.
 
-        >>>@Statsd.time("some.timer.bucket")
-        >>>def some_func():
-        >>>    pass #do something
+        >>> @Statsd.time("some.timer.bucket")
+        >>> def some_func():
+        >>>     pass  # do something
         """
         def wrap_timer(method):
             if not enabled:
@@ -317,9 +329,9 @@ class Statsd(object):
         """
         Function Decorator to count how many times a function is invoked.
 
-        @Statsd.count("some.counter.bucket")
-        def some_func():
-            pass #do something
+        >>> @Statsd.count("some.counter.bucket")
+        >>> def some_func():
+        >>>     pass #do something
         """
         def wrap_counter(method):
             if not enabled:
