@@ -12,10 +12,11 @@ try:
 except Exception as e:
     ctypes = None
 
+import sys
 import os
 import errno
 
-from client import UDPTransport, Statsd
+from .client import UDPTransport, Statsd
 
 STATSD_SEVERITY = 3
 LOGGER = None
@@ -30,6 +31,9 @@ class AFTransport(UDPTransport):
     def __init__(self, use_udp=True, verbosity=False, logger=None):
         set_logger(logger)
         self.mqueue_name = "/afcollectorapi"
+        if sys.version_info[0] == 3:
+            # Convert from Python 3's unicode
+            self.mqueue_name = self.mqueue_name.encode('ascii')
         self.flags = 0o4001
         self.msgLen = 2048
         self.mqueue = None

@@ -22,8 +22,8 @@ Sends statistics to the appfirst collector over UDP
 import sys
 import time
 import random
+import atexit
 import threading
-
 from socket import socket, AF_INET, SOCK_DGRAM
 
 
@@ -35,7 +35,7 @@ class UDPTransport(object):
         """
         Squirt the metrics over UDP
         """
-        import local_settings
+        from . import local_settings
         host = local_settings.statsd_host
         port = local_settings.statsd_port
         addr=(host, port)
@@ -137,7 +137,7 @@ class StatsdAggregator(object):
         send_buffer = {}
         for th in self.rbufs:
             read_buffer = self.rbufs[th]
-            for name, bucket in read_buffer.iteritems():
+            for name, bucket in read_buffer.items():
                 if name in send_buffer:
                     send_buffer[name].aggregate(bucket.stat)
                 else:
@@ -345,5 +345,4 @@ class Statsd(object):
 
 
 # shutdown automatically on application exit...
-import atexit
 atexit.register(Statsd.shutdown)

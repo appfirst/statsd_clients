@@ -27,9 +27,9 @@ class StatsdClientTest(unittest.TestCase):
         shlib.mq_send.return_value = 0
 
         Statsd.increment("mqtest")
-        shlib.mq_open.assert_called_once_with("/afcollectorapi", 04001)
+        shlib.mq_open.assert_called_once_with("/afcollectorapi", 0o4001)
         self.assertEqual(shlib.mq_open.call_args[0][0], "/afcollectorapi")
-        self.assertEqual(shlib.mq_open.call_args[0][1], 04001)
+        self.assertEqual(shlib.mq_open.call_args[0][1], 0o4001)
         post = "mqtest:1|c"
         shlib.mq_send.assert_called_once_with(1, post, len(post), 3)
         self.assertEqual(shlib.mq_send.call_args[0][0], 1)

@@ -3,3 +3,5 @@
 AFStatsd/MANIFEST
 # tarballs for PYPi get generated automatically
 AFStatsd/dist/*
+# setup.py build
+AFStatsd/build
