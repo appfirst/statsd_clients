@@ -25,10 +25,10 @@ $statsd.time('timing1'){sleep 0.04}    # timings get averaged when aggregated
 =begin
 
 100.times do 
-    $statsd.increment 'sampled', 0.1, 'sampled'
+    $statsd.increment 'sampled', 0.1
 end
 
-$statsd.set 'set1', 1099, "ez"    
+$statsd.set 'set1', 1099
 
 for i in 10..19 do
     $statsd.increment "counter#{i}"  # create a group of counters
@@ -54,7 +54,7 @@ for i in 0..9 do
         start = Time.now
         1000000.times do
             $statsd.increment 'inthethread'
-#            sleep(0.01)
+            sleep(0.01)
         end
         puts "thread #{j} says: I took #{((Time.now - start)*1000).round} ms"
     end

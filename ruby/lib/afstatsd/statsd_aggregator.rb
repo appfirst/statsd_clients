@@ -1,19 +1,19 @@
 # Statsd Aggregator
 #
-# Used to aggregate metrics in a threaded environment.  Only one of these 
+# Used to aggregate metrics in a threaded environment.  Only one of these
 # should be created, in the main thread.
-# For each thread, we create 2 buffers.  The thread will be writing to 
+# For each thread, we create 2 buffers.  The thread will be writing to
 # one, while the aggregator reads from the other.  The aggregator will
 # control which set is which.
-  
-  
- class StatsdAggregator 
+
+
+ class StatsdAggregator
     attr_accessor :transport
 
     def initialize(interval=20)
         @interval = interval
         @timer = nil
-        @mutex = Mutex.new    
+        @mutex = Mutex.new
         @running = false
         @left_buffers = {}        # 2 buffer groups
         @right_buffers = {}       #   each buffer group is a hash
@@ -23,10 +23,10 @@
         # register for at_exit call back, so we can flush our buffers
         at_exit do
             if @running
-                flush_buffers 
+                flush_buffers
                 swap_buffers
                 flush_buffers
-            end 
+            end
         end
 
         # in Rails, under PhusionPassener, we may be spun up in a new process,
@@ -36,8 +36,8 @@
                 if forked
                     Statsd.logger.debug {"PHUSION Forked! pid:#{Process.pid}"} if Statsd.logger
                     self.start(nil, true) if @running
-                end 
-            end        
+                end
+            end
         end
 
         if RUBY_PLATFORM =~ /linux/i
@@ -58,7 +58,7 @@
                 flush_buffers
             end
         end
-    end    
+    end
 
     def start(transport, force_restart=false)
         Statsd.logger.debug {"START    pid:#{Process.pid}"} if Statsd.logger
@@ -78,29 +78,29 @@
         @running = true
         #puts "aggregation started.  Interval=#{@interval}"
     end
-    
+
     def stop
         return if not @running    # already stopped
-        flush_buffers                    
+        flush_buffers
         @timer.kill if @timer
         @timer = nil
         @running = false
         #puts "aggregation stopped"
     end
-  
+
     def set_interval(interval)
         @interval = interval
     end
-    
+
     # the following methods are thread safe
-    
+
     def running
         @running
     end
 
     # this is the only method that should be used by child threads.
     def add(metric)
-        # We should have a write buffer assigned to our thread.  
+        # We should have a write buffer assigned to our thread.
         # Create one if not.
         #Statsd.logger.debug {"ADD      pid:#{Process.pid}"} if Statsd.logger
         unless write_buffer = @wbufs[Thread.current]
@@ -121,13 +121,13 @@
         end
         #puts "Thread #{Thread.current}: Added metric: #{metric}"
     end
-    
+
     private
-    
+
     # Next two methods are called at different times during the interval,
     # so any writes in progress after the swap will have time to complete.
 
-    def swap_buffers 
+    def swap_buffers
         #Statsd.logger.debug {"SWAP     pid:#{Process.pid}"} if Statsd.logger
         if @rbufs == @left_buffers
             @rbufs = @right_buffers
@@ -137,33 +137,33 @@
             @wbufs = @right_buffers
         end
     end
-    
+
     def flush_buffers
         # Statsd.logger.debug {"FLUSH    pid:#{Process.pid}"} if Statsd.logger
         # Each thread has it's own read buffer.  If it's empty, the
         # thread might be dead.  We'll delete it's read buffer.
         @rbufs.delete_if { |k, rb| rb.empty? }
-        
-        # If not empty, aggregate all the data across all the threads, 
+
+        # If not empty, aggregate all the data across all the threads,
         # then send.
         send_buffer = {}
         @rbufs.each_value do |rb|
             rb.each_value do |metric|
                 if m = send_buffer[metric.name]
                     m.aggregate metric.value
-                else    
+                else
                     send_buffer[metric.name] = metric
-                end    
+                end
             end
-            # once we've aggregated all the metrics from this 
-            # thread, clear out the buffer, but don't remove it.        
+            # once we've aggregated all the metrics from this
+            # thread, clear out the buffer, but don't remove it.
             rb.clear
-        end    
-        #puts "nothing to send" if send_buffer.empty? 
+        end
+        #puts "nothing to send" if send_buffer.empty?
         send_buffer.each_value do |metric|
         #Statsd.logger.debug {"    transporting metric #{metric.to_s}"} if Statsd.logger
             @transport.call(metric)
-        end    
+        end
     end
-    
+
 end    # class StatsdAggregator

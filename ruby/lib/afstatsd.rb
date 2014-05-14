@@ -7,9 +7,10 @@ require 'afstatsd/statsd_aggregator'
 require 'monitor'
 require 'fcntl'
 
-# = Statsd: A Statsd client (https://github.com/etsy/statsd)
+# = Statsd: A Statsd client (https://github.com/appfirst/statsd_clients)
+#                           (https://github.com/etsy/statsd)
 #
-# @example Set up a global Statsd client for a server on localhost:9125, 
+# @example Set up a global Statsd client for a server on localhost:9125,
 #                                aggregate 20 seconds worth of metrics
 #   $statsd = Statsd.new 'localhost', 8125, 20
 # @example Send some stats
@@ -134,20 +135,18 @@ class Statsd
     #
     # @param [String] stat stat name
     # @param [Numeric] sample_rate sample rate, 1 for always
-    # @param [String] optional note (AppFirst extension to StatsD)
     # @see #count
-    def increment(stat, sample_rate=1, note="")
-        count stat, 1, sample_rate, note
+    def increment(stat, sample_rate=1)
+        count stat, 1, sample_rate
     end
 
     # Sends a decrement (count = -1) for the given stat to the statsd server.
     #
     # @param [String] stat stat name
     # @param [Numeric] sample_rate sample rate, 1 for always
-    # @param [String] optional note (AppFirst extension to StatsD)
     # @see #count
-    def decrement(stat, sample_rate=1, note="")
-        count stat, -1, sample_rate, note
+    def decrement(stat, sample_rate=1)
+        count stat, -1, sample_rate
     end
 
     # Sends an arbitrary count for the given stat to the statsd server.
@@ -155,10 +154,9 @@ class Statsd
     # @param [String] stat stat name
     # @param [Integer] count count
     # @param [Numeric] sample_rate sample rate, 1 for always
-    # @param [String] optional note (AppFirst extension to StatsD)
-    def count(stat, count, sample_rate=1, note="")
+    def count(stat, count, sample_rate=1)
         if sample_rate == 1 or rand < sample_rate
-            send_metric StatsdMetrics::CMetric.new(expand_name(stat), count.round, sample_rate, note)
+            send_metric StatsdMetrics::CMetric.new(expand_name(stat), count.round, sample_rate)
         end
     end
 
@@ -170,11 +168,10 @@ class Statsd
     #
     # @param [String] stat stat name.
     # @param [Numeric] value gauge value.
-    # @param [String] optional note (AppFirst extension to StatsD)
     # @example Report the current user count:
     #   $statsd.gauge('user.count', User.count)
-    def gauge(stat, value, note="")
-        send_metric StatsdMetrics::GMetric.new(expand_name(stat), value, note)
+    def gauge(stat, value)
+        send_metric StatsdMetrics::GMetric.new(expand_name(stat), value)
     end
 
     # Sends an arbitary set value for the given stat to the statsd server.
@@ -186,11 +183,10 @@ class Statsd
     #
     # @param [String] stat stat name.
     # @param [Numeric] value event value.
-    # @param [String] optional note (AppFirst extension to StatsD)
     # @example Report a deployment happening:
     #   $statsd.set('deployment', DEPLOYMENT_EVENT_CODE)
-    def set(stat, value, note="")
-        send_metric StatsdMetrics::SMetric.new(expand_name(stat), value, note)
+    def set(stat, value)
+        send_metric StatsdMetrics::SMetric.new(expand_name(stat), value)
     end
 
     # Sends a timing (in ms) for the given stat to the statsd server. The
@@ -201,10 +197,9 @@ class Statsd
     # @param [String] stat stat name
     # @param [Integer] ms timing in milliseconds
     # @param [Numeric] sample_rate sample rate, 1 for always
-    # @param [String] optional note (AppFirst extension to StatsD)
-    def timing(stat, ms, sample_rate=1, note="")
+    def timing(stat, ms, sample_rate=1)
         if sample_rate == 1 or rand < sample_rate
-            send_metric StatsdMetrics::TMetric.new(expand_name(stat), ms.round, sample_rate, note)
+            send_metric StatsdMetrics::TMetric.new(expand_name(stat), ms.round, sample_rate)
         end    
     end
 
@@ -212,15 +207,14 @@ class Statsd
     #
     # @param [String] stat stat name
     # @param [Numeric] sample_rate sample rate, 1 for always
-    # @param [String] optional note (AppFirst extension to StatsD)
     # @yield The operation to be timed
     # @see #timing
     # @example Report the time (in ms) taken to activate an account
     #   $statsd.time('account.activate') { @account.activate! }
-    def time(stat, sample_rate=1, note="")
+    def time(stat, sample_rate=1)
         start = Time.now
         result = yield
-        timing(stat, ((Time.now - start) * 1000).round, sample_rate, note)
+        timing(stat, ((Time.now - start) * 1000).round, sample_rate)
         result
     end
 
@@ -295,5 +289,3 @@ class Statsd
     end
     
 end     # class Statsd
-
-

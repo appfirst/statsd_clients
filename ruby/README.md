@@ -85,18 +85,18 @@ application code to report metrics to your AppFirst application or dashboard:
 
 <h3>counters</h3>
 
-	def increment(name, sample_rate=1, note="")
-	def decrement(stat, sample_rate=1, note="")
-	def count(stat, count, sample_rate=1, note="")
+	def increment(name, sample_rate=1)
+	def decrement(stat, sample_rate=1)
+	def count(stat, count, sample_rate=1)
 
 <h3>timers</h3>
 
-	def timing(stat, ms, sample_rate=1, note="")
-	def time(stat, sample_rate=1, note="")
+	def timing(stat, ms, sample_rate=1)
+	def time(stat, sample_rate=1)
 	
 <h3>gauges</h3>
 
-	def gauge(stat, value, note="")
+	def gauge(stat, value)
 
 Examples:
 --------- 
