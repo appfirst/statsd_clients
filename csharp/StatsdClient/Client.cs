@@ -42,27 +42,16 @@ namespace Statsd
         //Gauge Functions
         public bool Gauge(string key, int value)
         {
-            return Gauge(null, key, value);
-        }
-
-        public bool Gauge(string message, string key, int value)
-        {
-            return strategy.Emit<GaugeBucket>(this.Send, key, value, message);
+            return strategy.Emit<GaugeBucket>(this.Send, key, value);
         }
 
         #endregion
 
         #region Timing Functions
 
-        //Timing Functions
         public bool Timing(string key, int value)
         {
-            return Timing(null, key, value);
-        }
-
-        public bool Timing(string message, string key, int value)
-        {
-            return strategy.Emit<TimerBucket>(this.Send, key, value, message);
+            return strategy.Emit<TimerBucket>(this.Send, key, value);
         }
 
         #endregion
@@ -81,20 +70,10 @@ namespace Statsd
 
         public bool UpdateCount(int magnitude, params string[] keys)
         {
-            return UpdateCount(null, magnitude, 1.0, keys);
+            return UpdateCount(magnitude, 1.0, keys);
         }
 
         public bool UpdateCount(int magnitude, double sampleRate, params string[] keys)
-        {
-            return UpdateCount(null, magnitude, sampleRate, keys);
-        }
-
-        public bool UpdateCount(string message, int magnitude, params string[] keys)
-        {
-            return UpdateCount(message, magnitude, 1.0, keys);
-        }
-
-        public bool UpdateCount(string message, int magnitude, double sampleRate, params string[] keys)
         {
             if (sampleRate < 1)
             {
@@ -110,7 +89,7 @@ namespace Statsd
             bool retvalue = true;
             foreach (string key in keys)
             {
-                bool success = this.strategy.Emit<CounterBucket>(this.Send, key, magnitude, message);
+                bool success = this.strategy.Emit<CounterBucket>(this.Send, key, magnitude);
                 retvalue &= success;
             }
             return retvalue;
@@ -187,11 +166,11 @@ namespace Statsd
             //stop();
         }
 
-        public bool Emit<T>(SendDelegate doSend, string bucketname, int value, string message) 
+        public bool Emit<T>(SendDelegate doSend, string bucketname, int value) 
             where T : IBucket
         {
             BufferedStrategy.doSend = doSend;
-            buffer.Accumulate<T>(bucketname, value, message);
+            buffer.Accumulate<T>(bucketname, value);
             
 
             return true;
@@ -200,12 +179,12 @@ namespace Statsd
 
     public class InstantStrategy : IStrategy
     {
-        public bool Emit<T>(SendDelegate doSend, string bucketname, int value, string message) 
+        public bool Emit<T>(SendDelegate doSend, string bucketname, int value) 
             where T : IBucket
         {
             T bucket = (T) Activator.CreateInstance(typeof(T));
             bucket.Name = bucketname;
-            bucket.Infuse(value, message);            
+            bucket.Infuse(value);            
             return doSend(bucket.ToString());
         }
     }

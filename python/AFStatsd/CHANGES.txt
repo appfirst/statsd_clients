@@ -1,1 +1,3 @@
+v0.1.3, 5/14/2014 -- [MLO] Removed deprecated `message` field and added support
+                     for python 3.
 v0.1.2, 5/15/2013 -- Fix bug when aggreagation turned off.

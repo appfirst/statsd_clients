@@ -85,7 +85,7 @@ namespace TestPerformance
                 statsd.Increment(bucketPrefix + "pressure.multiple1");
                 int elapsedTimeMillis = Convert.ToInt32((DateTime.Now - start).TotalMilliseconds);
                 statsd.Timing(bucketPrefix + "pressure.incr_time", elapsedTimeMillis);
-			    if (i%3==0){
+			    if (i % 3 == 0) {
                     statsd.Increment(bucketPrefix + "pressure.multiple3");
 			    }
 		    }
@@ -131,15 +131,12 @@ namespace TestPerformance
         static void ShowExample(IStatsdClient statsd)
         {
             statsd.Gauge(bucketPrefix + "gauge", 500);
-            statsd.Gauge("test|Gauge(string message, string key, int value)", bucketPrefix + "gauge", 500);
-            statsd.Timing("test|Timer(string message, string key, int value)", bucketPrefix + "timer", 500);
+            statsd.Timing(bucketPrefix + "timer", 500);
             statsd.Increment(bucketPrefix + "counter");
             statsd.Decrement(bucketPrefix + "counter");
             statsd.UpdateCount(2, bucketPrefix + "counter");
             statsd.UpdateCount(4, 0, bucketPrefix + "counter", bucketPrefix + "counter2");
             statsd.UpdateCount(8, 2, bucketPrefix + "counter", bucketPrefix + "counter2");
-            statsd.UpdateCount("test|UpdateCount(string message, string key, int value)", 16, bucketPrefix + "counter", bucketPrefix + "counter2");
-            statsd.UpdateCount("UpdateCount(string message, string key, int value)|test", 32, 1, bucketPrefix + "counter");
         }
 
         static void SendingWithGeyserStrategy()
@@ -181,7 +178,7 @@ namespace TestPerformance
                 sb.Append(sb.ToString());
             }
             Console.WriteLine(sb.Length);
-            statsd.UpdateCount(sb.ToString(), 1, "a");
+            statsd.UpdateCount(1, 'a');
             statsd.Strategy = new BufferedStrategy(5000);
             while (true)
             {
