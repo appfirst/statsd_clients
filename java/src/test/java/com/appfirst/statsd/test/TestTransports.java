@@ -19,7 +19,7 @@ public class TestTransports {
 	public void testDoSend() {
 		StatsdService sc = new AFService().setStrategy(StrategyFactory.getInstantStrategy());
 		Transport t = sc.getTransport();
-		String stat = String.format("test.java.transport:1|c||%s",t.getClass().getSimpleName());
+		String stat = String.format("af.stats_test.java.transport.%s:1|c", t.getClass().getSimpleName());
 		assertNotNull(t);
 		boolean result = t.doSend(stat);
 		assertTrue(result);
@@ -31,7 +31,7 @@ public class TestTransports {
 			return;
 		}
 		Transport t = new MqTransport();
-		String stat = String.format("test.java.transport:1|c||%s", t.getClass().getSimpleName());
+		String stat = String.format("af.stats_test.java.transport.%s:1|c", t.getClass().getSimpleName());
 		boolean result = t.doSend(stat);
 		assertTrue(result);
 	}
@@ -42,7 +42,7 @@ public class TestTransports {
 			return;
 		}
 		Transport t = new MailSlotTransport();
-		String stat = String.format("test.java.transport:1|c||%s", t.getClass().getSimpleName());
+		String stat = String.format("af.stats_test.java.transport.%s:1|c", t.getClass().getSimpleName());
 		boolean result = t.doSend(stat);
 		assertTrue(result);
 	}

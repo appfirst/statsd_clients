@@ -14,7 +14,7 @@ to use UDP (like the Etsy-standard) instead of the message queue.
 Installation
 ------------
 
-This client can be compiled with `maven`. Compiled files will be put in the `target/` directory.
+This client can be compiled with maven by running `mvn package`. Compiled files will be put in the `target/` directory.
 
 
 Configuration
