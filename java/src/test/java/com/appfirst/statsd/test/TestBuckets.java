@@ -16,11 +16,11 @@ public class TestBuckets {
 	public final void testCounter() {
 		CounterBucket bucket = new CounterBucket();
 		bucket.setName("counter");
-		bucket.infuse(1, "message1");
-		bucket.infuse(2, "message2");
-		bucket.infuse(4, null);
+		bucket.infuse(1);
+		bucket.infuse(2);
+		bucket.infuse(4);
 		String actual = bucket.toString();
-		String expected = "counter:7|c||message1|message2";
+		String expected = "counter:7|c";
 		assertEquals("Aggregated stat", expected, actual);
 	}
 
@@ -28,11 +28,11 @@ public class TestBuckets {
 	public final void testTimer() {
 		TimerBucket bucket = new TimerBucket();
 		bucket.setName("timer");
-		bucket.infuse(1, "message1");
-		bucket.infuse(3, "message2");
-		bucket.infuse(5, null);
+		bucket.infuse(1);
+		bucket.infuse(3);
+		bucket.infuse(5);
 		String actual = bucket.toString();
-		String expected = "timer:3|ms||message1|message2";
+		String expected = "timer:3|ms";
 		assertEquals("Aggregated stat", expected, actual);
 	}
 
@@ -43,21 +43,21 @@ public class TestBuckets {
 		try {
 			GaugeBucket bucket = new GaugeBucket();
 			bucket.setName("gauge");
-			bucket.infuse(1, "message1");
-			bucket.infuse(3, "message2");
+			bucket.infuse(1);
+			bucket.infuse(3);
 
 			beforelast = new Date().getTime();
 			Thread.sleep(1);
 
-			bucket.infuse(5, null);
+			bucket.infuse(5);
 			actual = bucket.toString();
 
 			Thread.sleep(1);
 		} catch (InterruptedException e) {
 		}
 
-		String expectedhead = "gauge:3|g|";
-		String expectedtail = "|message1|message2";
+		String expectedhead = "gauge:3";
+		String expectedtail = "|g";
 		assertTrue("Aggregated stat", actual.startsWith(expectedhead));
 		assertTrue("Aggregated stat", actual.endsWith(expectedtail));
 		long timestamp = Long.valueOf(actual.substring(

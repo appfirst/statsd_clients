@@ -24,6 +24,7 @@ import com.appfirst.statsd.transport.UdpTransport;
  * by Andrew Gwozdziewycz <andrew@meetup.com>, @apgwoz
  * 
  * @author Yangming Huang @leonmax
+ * @author (maintainer) Mike Okner (michael@appfirst.com)
  */
 public class DefaultService implements StatsdService {
 	protected Strategy strategy = null;
@@ -54,31 +55,17 @@ public class DefaultService implements StatsdService {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int)
-	 */
-	public boolean gauge(String bucket, int value) {
-		return gauge(bucket, value, null);
-	}
-
-	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#gauge(java.lang.String, int, java.lang.String)
 	 */
-	public boolean gauge(String bucketname, int value, String message){
-		return getStrategy().send(GaugeBucket.class, bucketname, value, message);
-	}
-
-	/* (non-Javadoc)
-	 * @see com.appfirst.statsd.IStatsdClient#timing(java.lang.String, int)
-	 */
-	public boolean timing(String bucket, int value) {
-		return timing(bucket, value, null);
+	public boolean gauge(String bucketname, int value){
+		return getStrategy().send(GaugeBucket.class, bucketname, value);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#timing(java.lang.String, int, java.lang.String)
 	 */
-	public boolean timing(String bucketname, int value, String message){
-		return getStrategy().send(TimerBucket.class, bucketname, value, message);
+	public boolean timing(String bucketname, int value){
+		return getStrategy().send(TimerBucket.class, bucketname, value);
 	}
 
 	/* (non-Javadoc)
@@ -92,42 +79,37 @@ public class DefaultService implements StatsdService {
 	 * @see com.appfirst.statsd.IStatsdClient#increment(java.lang.String)
 	 */
 	public boolean increment(String... buckets) {
-		return updateStats(1, null, 1, buckets);
+		return updateStats(1, 1, buckets);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#updateStats(int, java.lang.String)
 	 */
-	public boolean updateStats(int value, String... buckets){
-		return updateStats(value, null, 1, buckets);
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.appfirst.statsd.IStatsdClient#updateStats(int, double, java.lang.String)
-	 */
-	public boolean updateStats(int value, double sampleRate, String... buckets){
-		return updateStats(value, null, sampleRate, buckets);
+	public boolean updateStats(int value, String... buckets) {
+		return updateStats(value, 1, buckets);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#updateStats(int, java.lang.String, double, java.lang.String)
+	 * Updates multiple buckets
 	 */
-	public boolean updateStats(int value, String message, double sampleRate, String... buckets){
+	public boolean updateStats(int value, double sampleRate, String... buckets) {
 		boolean result = true;
 		for (int i = 0; i < buckets.length; i++) {
-			result = result && this.updateStats(buckets[i], value, sampleRate, message);
+			result = result && this.updateStats(buckets[i], value, sampleRate);
 		}
 		return result;
 	}
 
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.IStatsdClient#updateStats(java.lang.String, int, double, java.lang.String)
+	 * Updates a single bucket
 	 */
-	public boolean updateStats(String bucketname, int value, double sampleRate, String message){
+	public boolean updateStats(String bucketname, int value, double sampleRate){
 		if (sampleRate < 1.0 && RNG.nextDouble() > sampleRate) 
 			return true;
 		value /= sampleRate;
-		return getStrategy().send(CounterBucket.class, bucketname, value, message);
+		return getStrategy().send(CounterBucket.class, bucketname, value);
 	}
 	
 	@Override

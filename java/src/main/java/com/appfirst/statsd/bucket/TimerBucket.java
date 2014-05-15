@@ -5,7 +5,6 @@ public class TimerBucket implements Bucket{
 	private String name;
 	private int sumstat = 0;
 	private int count = 0;
-	private String message = null;
 
 	@Override
 	public void setName(String name){
@@ -21,25 +20,14 @@ public class TimerBucket implements Bucket{
 	public String toString(){
 		String stat = null;
 		int avg = this.sumstat/this.count;
-		if (message != null && !message.equals("")){
-			stat = String.format("%s:%d|ms||%s", name, avg, message);
-		} else {
-			stat = String.format("%s:%d|ms",  name, avg);
-		}
+		stat = String.format("%s:%d|ms",  name, avg);
 		return stat;
 	}
 
 	@Override
-	public void infuse(int value, String message){
+	public void infuse(int value){
 		this.sumstat += value;
 		this.count++;
-		if (message != null && !message.equals("")){
-			if (this.message != null){
-				this.message += "|" + message;
-			} else {
-				this.message = message;
-			}
-		}
 	}
 
 }

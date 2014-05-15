@@ -6,6 +6,5 @@ import com.appfirst.statsd.transport.Transport;
 
 public interface Strategy {
 	void setTransport(Transport transport);
-	<T extends Bucket> boolean send(
-			Class<T> clazz, String bucketname, int value, String message);
+	<T extends Bucket> boolean send(Class<T> clazz, String bucketname, int value, String message);
 }

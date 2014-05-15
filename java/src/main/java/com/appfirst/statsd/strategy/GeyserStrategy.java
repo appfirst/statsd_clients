@@ -43,7 +43,7 @@ public final class GeyserStrategy implements Strategy{
 		}
 	}
 	
-	public void terminate(){
+	public void terminate() {
 		log.info("force terminating execution");
 		if (!executor.isShutdown()) {
 			executor.shutdown();
@@ -52,7 +52,7 @@ public final class GeyserStrategy implements Strategy{
 					log.warn("Executor did not terminate in the specified time.");
 					List<Runnable> droppedTasks = executor.shutdownNow();
 					log.warn("Executor was abruptly shut down. " + 
-							droppedTasks.size() + " tasks will not be executed.");
+						  	 droppedTasks.size() + " tasks will not be executed.");
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -74,13 +74,9 @@ public final class GeyserStrategy implements Strategy{
 		this.unit = unit;
 	}
 
-	public <T extends Bucket> boolean send(
-			Class<T> clazz,
-			String bucketname,
-			int value,
-			String message){
+	public <T extends Bucket> boolean send(Class<T> clazz, String bucketname, int value) {
 		try {
-			buffer.deposit(clazz, bucketname, value, message);
+			buffer.deposit(clazz, bucketname, value);
 		} catch (BucketTypeMismatchException e) {
 			e.printStackTrace();
 			return false;
@@ -93,7 +89,7 @@ public final class GeyserStrategy implements Strategy{
 		}
 		synchronized(executor){
 			if (!(executor.isShutdown() || executor.isTerminated()) 
-				&& (progress == null || progress.isDone() || progress.isCancelled())){
+				&& (progress == null || progress.isDone() || progress.isCancelled())) {
 				log.info(String.format("scheduling execution after %s %s", interval, unit));
 				progress = executor.schedule(new Runnable() {
 					@Override public void run() { flush(); }
