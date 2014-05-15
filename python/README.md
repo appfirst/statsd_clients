@@ -1,16 +1,16 @@
 ![Appfirst](http://www.appfirst.com/static/images/appfirst-logo.svg)
 
-A Python StatsD client for use with the [AppFirst](http://www.appfirst.com) collector
+Python StatsD client for the [AppFirst](http://www.appfirst.com) collector
 ====================================
 This Python StatsD client includes several AppFirst extensions:
 
 - Metrics are aggregated over 20-second periods before being transmitted to an endpoint in order to minimize overhead and size of data in uploads.
-- Data is sent to the local collector via a AFTransport (POSIX message queue) instead of over UDP.
+- Data is sent to the local collector via AFTransport (POSIX message queue) instead of over UDP.
 
 By default, both of those features are enabled, but the aggregation can be disabled and the client can be configured
 to use UDP (like the Etsy-standard) instead of the message queue.
 
-Installation:
+Installation
 ------------
 This AppFirst Python client supports Python 2.6+ including Python 3.
 
@@ -24,7 +24,7 @@ Using pip:
     afclient.py
     local_settings.py
 
-Configuration:
+Configuration
 -------------
 
 Pull in the AppFirst StatsD Client (probably in your main module):
@@ -85,7 +85,7 @@ Please be aware that the client will create a python thread to run the aggregati
 function. As you know, you should not call os.fork() if python threads are running,
 so if you use multiprocessing, import the statsd library *after* you fork.
 
-Usage:
+Usage
 -----
 The simplest `Statsd` method is `increment`. It simply keeps a running tally of
 how many times each counter name gets incremented during each time period. To
