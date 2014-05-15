@@ -50,8 +50,8 @@ import com.appfirst.statsd.UDPClient;
 public class SomeClass {
 
 	public static void main() {
-		StatsdClient client = new UDPClient();
-		client.increment("bucket");
+		StatsdClient stats = new UDPClient();
+		stats.increment("bucket");
 	}
 
 }
