@@ -14,7 +14,8 @@ to use UDP (like the Etsy-standard) instead of the message queue.
 Installation
 ------------
 
-This client can be compiled with maven by running `mvn package`. Compiled files will be put in the `target/` directory.
+This client can be compiled with [Maven](https://maven.apache.org/) by running `mvn package`. Compiled
+files will be put in the `target/` directory.
 
 
 Configuration
@@ -115,7 +116,7 @@ Example:
 
 ```java
 StatsdClient stats = new AFClient();
-# report that an action took 237 milliseconds
+// Report that an action took 237 milliseconds
 stats.timing("ecommerce.checkout", 237);
 ```
 
@@ -127,6 +128,6 @@ message queue and the `UDPClient` may introduce too much network traffic. Sampli
 
 By passing a `sampleRate` to `updateStats`, the client will only send `(sampleRate * 100)%` of the **counter** messages at **random** and discard the rest. The message will carry this rate, and the server will restore the count by multiply `1/sampleRate` upon reception.
 
-By default the sample_rate is alway 1, which means every message will be sent.
+By default the `sampleRate` is alway 1, which means every message will be sent.
 
 Note this is a **counter** only feature, `sampleRate` for **timer** and **gauge** will be ignored.
