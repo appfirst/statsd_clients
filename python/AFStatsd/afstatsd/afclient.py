@@ -7,18 +7,26 @@ The AppFirst Statsd Transport
 
 __all__=['AFTransport', 'Statsd', 'UDPTransport']
 
-try:
-    import ctypes
-except Exception as e:
-    ctypes = None
-
 import sys
 import os
 import errno
 
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
+try:
+    import win32file
+    import win32con
+except ImportError:
+    win32file = None
+    win32con = None
+
 from .client import UDPTransport, Statsd
 
+
 PYTHON3 = sys.version_info[0] == 3
+WINDOWS = sys.platform.lower().startswith("win")
 STATSD_SEVERITY = 3
 LOGGER = None
 
@@ -58,17 +66,26 @@ class AFTransport(UDPTransport):
             self.mqueue = None
 
     def _createQueue(self):
-        if not self.shlib:
-            raise MQError("Statsd Error: native support for AFTransport is not available")
         try:
-            self.mqueue = self.shlib.mq_open(self.mqueue_name, self.flags)
-            if LOGGER:
-                LOGGER.info("Statsd mqueue {0} opened successfully".format(self.mqueue))
-            if (self.mqueue < 0):
-                raise MQError("Statsd Error: AFCollector not installed")
+            if WINDOWS and win32file is not None:
+                self.mqueue = win32file.CreateFile(r'\\.\mailslot\{0}'.format(self.mqueue_name), win32file.GENERIC_WRITE,
+                                                   win32file.FILE_SHARE_READ, None, win32con.OPEN_EXISTING, 0, None)
+            elif WINDOWS:
+                raise MQError("Statsd Error: required Python win32 extension is not available")
+            elif not self.shlib:
+                raise MQError("Statsd Error: native support for AFTransport is not available")
+            else:
+                self.mqueue = self.shlib.mq_open(self.mqueue_name, self.flags)
+        except MQError:
+            raise
         except Exception as e:
             raise MQError("Statsd Error: unknown error occur when open mqueue "
                           "({0.__class__.__name__}: {0})".format(e))
+        else:
+            if LOGGER:
+                LOGGER.info("Statsd mqueue {0} opened successfully".format(self.mqueue))
+            if (self.mqueue < 0):
+                raise MQError("Statsd Error: Failed to open queue")
 
     def emit(self, data):
         if self.verbosity and LOGGER:
@@ -93,7 +110,7 @@ class AFTransport(UDPTransport):
 
     def _emit(self, data):
         """
-        Actually send the data to the collector via the POSIX mq.
+        Actually send the data to the collector via the POSIX/Mailslot mq.
         Try bundling multiple messages into one if they won't exceed the max size
         """
         to_post_list = []
@@ -125,22 +142,41 @@ class AFTransport(UDPTransport):
                     to_post_list[-1] = combined
         
         for post in to_post_list:
-            rc = self.shlib.mq_send(self.mqueue, post, len(post), STATSD_SEVERITY)
-            if (rc < 0):
-                errornumber = ctypes.get_errno()
-                if errno.errorcode[errornumber] != "EAGAIN":
-                    errmsg = os.strerror(errornumber)
-                    if LOGGER:
-                        LOGGER.error("Statsd Error: failed to mq_send {0}".format(errmsg))
-                elif LOGGER:
-                    LOGGER.error("StatsD queue full; Failed to send message: {0}".format(post))
+            if WINDOWS and PYTHON3:
+                # Create bytearray with pid & send to mailslot
+                data_string = "{0}:{1}:{2}".format(os.getpid(), 3, post.decode('ascii'))
+                data_bytes = bytearray(data_string.encode('utf-16'))
+                rc, _ = win32file.WriteFile(self.mqueue, data_bytes, None)
+                if rc < 0 and LOGGER:
+                    LOGGER.error("Statsd Error: failed to write to Mailslot")
+            elif WINDOWS:
+                # Create bytearray from unicode with pid & send to mailslot
+                data_string = unicode("{0}:{1}:{2}").format(os.getpid(), 3, unicode(post))
+                data_bytes = bytearray(data_string.encode('utf-16'))
+                rc, _ = win32file.WriteFile(self.mqueue, data_bytes, None)
+                if rc < 0 and LOGGER:
+                    LOGGER.error("Statsd Error: failed to write to Mailslot")
+            else:
+                # Send data to POSIX mq
+                rc = self.shlib.mq_send(self.mqueue, post, len(post), STATSD_SEVERITY)
+                if rc < 0:
+                    errornumber = ctypes.get_errno()
+                    if errno.errorcode[errornumber] != "EAGAIN":
+                        errmsg = os.strerror(errornumber)
+                        if LOGGER:
+                            LOGGER.error("Statsd Error: failed to mq_send {0}".format(errmsg))
+                    elif LOGGER:
+                        LOGGER.error("StatsD queue full; Failed to send message: {0}".format(post))
 
     def close(self):
         if self.mqueue:
             if LOGGER:
                 LOGGER.warning("mq {0} is being closed".format(self.mqueue_name))
             try:
-                _ = self.shlib.mq_close(self.mqueue)
+                if WINDOWS:
+                    self.mqueue.Close()
+                else:
+                    _ = self.shlib.mq_close(self.mqueue)
             except:
                 pass
             self.mqueue = None
