@@ -111,9 +111,12 @@ class AFTransport(UDPTransport):
                 to_post_list.append(post)
             else:
                 previous = to_post_list[-1]
-                combined = "{0}::{1}".format(previous, post)
                 if PYTHON3:
-                    combined = combined.encode('ascii')
+                    # More unicode fun
+                    combined = "{0}::{1}".format(previous.decode('ascii'),
+                                                 post.decode('ascii')).encode('ascii')
+                else:
+                    combined = "{0}::{1}".format(previous, post)
                 if len(combined) > self.msgLen:
                     # Combined message would be too long
                     to_post_list.append(post)
