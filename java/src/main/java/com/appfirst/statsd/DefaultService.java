@@ -1,4 +1,5 @@
 package com.appfirst.statsd;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Random;
@@ -72,7 +73,7 @@ public class DefaultService implements StatsdService {
 	 * @see com.appfirst.statsd.IStatsdClient#decrement(java.lang.String)
 	 */
 	public boolean decrement(String... buckets) {
-		return updateStats(-1, null, 1, buckets);
+		return updateStats(-1, 1, buckets);
 	}
 
 	/* (non-Javadoc)

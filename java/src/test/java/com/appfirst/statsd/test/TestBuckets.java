@@ -56,13 +56,11 @@ public class TestBuckets {
 		} catch (InterruptedException e) {
 		}
 
-		String expectedhead = "gauge:3";
-		String expectedtail = "|g";
+        // Whole thing looks like "gauge:3|g|1400188755062"
+		String expectedhead = "gauge:3|g";
 		assertTrue("Aggregated stat", actual.startsWith(expectedhead));
-		assertTrue("Aggregated stat", actual.endsWith(expectedtail));
-		long timestamp = Long.valueOf(actual.substring(
-				actual.indexOf(expectedhead) + expectedhead.length(), 
-				actual.indexOf(expectedtail)));
+		long timestamp = Long.valueOf(actual.substring(actual.indexOf(expectedhead) + expectedhead.length() + 1,
+                                                       actual.length()));
 		long now = new Date().getTime();
 		assertTrue("Some time before now", timestamp < now);
 		assertTrue("Some time after start", timestamp > beforelast);
