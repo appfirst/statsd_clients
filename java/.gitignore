@@ -2,6 +2,7 @@
 *.class
 bin/
 target/
+lib/
 *.jar
 
 # Package Files #

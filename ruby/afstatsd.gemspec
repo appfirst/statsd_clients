@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
     s.name          = 'afstatsd'
-    s.version       = '0.0.7'
+    s.version       = '0.9.0'
     s.date          = '2014-05-14'
     s.summary       = "AppFirst StatsD Library"
     s.description   = "A StatsD library with AppFirst Extensions"
