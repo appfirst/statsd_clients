@@ -10,13 +10,14 @@ http://www.appfirst.com
 Updated for Python 3 May 14, 2014 by michael@appfirst.com
 
 Python client for AppFirst Statsd+
-this file expects local_settings.py to be in the same dir, with statsd host and port information:
+this file expects local_settings.py to be in the same dir, with statsd host and
+port information:
 
 statsd_host = 'localhost'
 statsd_port = 8125
 
-Sends statistics to the stats daemon over UDP
-Sends statistics to the appfirst collector over UDP
+Sends statistics to a stats daemon over UDP
+Sends statistics to the AppFirst collector over POSIX MQ or Windows Mailslot
 """
 
 import sys
@@ -31,23 +32,23 @@ from socket import socket, AF_INET, SOCK_DGRAM
 #   Default UDP Transport
 #---------------------------------------------------------------------------
 class UDPTransport(object):
+    def __init__(self, host='localhost', port=8125):
+        self.host = host
+        self.port = port
+
     def emit(self, data):
         """
-        Squirt the metrics over UDP
+        Send the metrics over UDP
         """
-        from . import local_settings
-        host = local_settings.statsd_host
-        port = local_settings.statsd_port
-        addr=(host, port)
+        addr=(self.host, self.port)
 
         udp_sock = socket(AF_INET, SOCK_DGRAM)
         try:
             for name, value in data.items():
-                send_data = "{0}:{1}".format(name, value)
+                send_data = "{0}:{1}".format(name, value.format_string(udp=True))
                 udp_sock.sendto(send_data, addr)
         except Exception as e:
             sys.stderr.write("Error emitting stats over UDP: {0.__class__.__name__}: {0}\n".format(e))
-            pass  # we don't care
 
     def close(self):
         pass
@@ -154,13 +155,27 @@ class StatsdAggregator(object):
             self.wbufs = self.right_buffers
 
 
+class Bucket(object):
+    def format_string(self, udp=False):
+        if udp:
+            return self._to_udp_string()
+        else:
+            return self._to_af_string()
+
+    def _to_udp_string(self):
+        raise NotImplementedError
+
+    def _to_af_string(self):
+        return self._to_udp_string()
+
+
 class CounterBucket(object):
     def __init__(self, name, stat, rate=1):
         self.name = name
         self.stat = stat
         self.rate = rate
 
-    def __str__(self):
+    def _to_udp_string(self):
         return "{0}|c".format(self.stat)
 
     def aggregate(self, stat):
@@ -171,17 +186,27 @@ class CounterBucket(object):
         # Note: This is non-standard. We should not divide this out,
         #  but instead send the semple rate upstream (with @rate)
         self.stat += int(stat/self.rate)
-        return self  # for chaining
 
 
 class TimerBucket(object):
     def __init__(self, name, stat):
         self.name = name
-        self.stat = stat
+        self.stat = [stat]
         self.count = 1
 
-    def __str__(self):
-        avg = self.stat/self.count;
+    def _to_af_string(self):
+        """
+        Sending up the full list of values by default so AppFirst can calculate
+        the max/min during the interval as well.
+        """
+        return "{0}|ms".format(','.join(self.stat))
+
+    def _to_udp_str(self):
+        """
+        Only send up the average if emitting over UDP so we don't break existing
+        StatsD implementations.
+        """
+        avg = sum(self.stat) / self.count
         return "{0}|ms".format(avg)
 
     def aggregate(self, stat):
@@ -189,9 +214,8 @@ class TimerBucket(object):
         TimerBuckets are aggregated by adding new time values to the existing
         time values and incrementing a counter used to get an average time.
         """
-        self.stat += stat
+        self.stat.extend(stat)
         self.count += 1
-        return self  # for chaining
 
 
 class GaugeBucket(object):
@@ -200,7 +224,7 @@ class GaugeBucket(object):
         self.stat = stat
         self.timestamp=int(time.time())
 
-    def __str__(self):
+    def _to_udp_string(self):
         return "{0}|g|{1}".format(self.stat, self.timestamp)
 
     def aggregate(self, stat):
@@ -210,7 +234,6 @@ class GaugeBucket(object):
         """
         self.stat = stat
         self.timestamp = int(time.time())
-        return self  # for chaining
 
 
 #---------------------------------------------------------------------------

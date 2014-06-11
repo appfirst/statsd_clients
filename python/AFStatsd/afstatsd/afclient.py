@@ -115,7 +115,7 @@ class AFTransport(UDPTransport):
         """
         to_post_list = []
         for name, value in data.items():
-            send_data = "{0}:{1}".format(name, value)
+            send_data = "{0}:{1}".format(name, value.format_string(udp=False))
             if PYTHON3:
                 # Unicode not currently supported
                 send_data = send_data.encode('ascii')
@@ -164,14 +164,14 @@ class AFTransport(UDPTransport):
                     if errno.errorcode[errornumber] != "EAGAIN":
                         errmsg = os.strerror(errornumber)
                         if LOGGER:
-                            LOGGER.error("Statsd Error: failed to mq_send {0}".format(errmsg))
+                            LOGGER.error("Statsd Error: failed to mq_send: {0}".format(errmsg))
                     elif LOGGER:
                         LOGGER.error("StatsD queue full; Failed to send message: {0}".format(post))
 
     def close(self):
         if self.mqueue:
             if LOGGER:
-                LOGGER.warning("mq {0} is being closed".format(self.mqueue_name))
+                LOGGER.warning("MQ {0} is being closed".format(self.mqueue_name))
             try:
                 if WINDOWS:
                     self.mqueue.Close()
@@ -196,29 +196,29 @@ class MQError(Exception):
 class MQSendError(Exception):
     def __init__(self, rc, msg=None):
         self.rc = rc
-        self.msg = msg or "Statsd Error"
+        self.msg = msg if msg is not None else 'Statsd Error'
 
     def __str__(self):
-        return str(self.msg) + " return errcode %s" % errno.errorcode(self.rc)
+        return "{0}; return errcode: {1}".format(self.msg, errno.errorcode(self.rc))
 
 
 Statsd.set_transport(AFTransport())
 Statsd.set_aggregation(True)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Test code
     Statsd.set_transport(AFTransport(verbosity=True))
     count = 1
 
-    @Statsd.count("python.test.count")
-    @Statsd.time("python.test.time")
+    @Statsd.count('python.test.count')
+    @Statsd.time('python.test.time')
     def test_stats():
-        Statsd.timing("python.test.timer",500)
-        Statsd.gauge("python.test.gauge",500)
-        Statsd.increment("python.test.counter")
-        Statsd.decrement("python.test.counter")
-        Statsd.update_stats("python.test.counter", 5, sample_rate=1)
-        Statsd.update_stats("python.test.counter", -5, sample_rate=0)
+        Statsd.timing('python.test.timer', 500)
+        Statsd.gauge('python.test.gauge', 500)
+        Statsd.increment('python.test.counter')
+        Statsd.decrement('python.test.counter')
+        Statsd.update_stats('python.test.counter', 5, sample_rate=1)
+        Statsd.update_stats('python.test.counter', -5, sample_rate=0)
 
     while count < 100000:
         test_stats()

@@ -9,12 +9,12 @@ class StatsdClientTest(unittest.TestCase):
     def test_build_message(self):
         Statsd.set_transport(UDPTransport())
 
-        # no nothing
-        self.assertEqual(Statsd._build_message({"test":"1|c"}),{'test': '1|c'})
+        # Message without timestamp
+        self.assertEqual(Statsd._build_message({'test': '1|c'}), {'test': '1|c'})
 
         # with timestamp
-        self.assertEqual(Statsd._build_message({"testg":"1|g"}, 1, timestamp=1339793258),
-                         {"testg":"1|g|1339793258"})
+        self.assertEqual(Statsd._build_message({'testg': '1|g'}, 1, timestamp=1339793258),
+                         {'testg': '1|g|1339793258'})
 
     def test_AFTransport(self):
         shlib = MagicMock()
@@ -26,11 +26,11 @@ class StatsdClientTest(unittest.TestCase):
         shlib.mq_open.return_value = 1
         shlib.mq_send.return_value = 0
 
-        Statsd.increment("mqtest")
-        shlib.mq_open.assert_called_once_with("/afcollectorapi", 0o4001)
-        self.assertEqual(shlib.mq_open.call_args[0][0], "/afcollectorapi")
+        Statsd.increment('mqtest')
+        shlib.mq_open.assert_called_once_with('/afcollectorapi', 0o4001)
+        self.assertEqual(shlib.mq_open.call_args[0][0], '/afcollectorapi')
         self.assertEqual(shlib.mq_open.call_args[0][1], 0o4001)
-        post = "mqtest:1|c"
+        post = 'mqtest:1|c'
         shlib.mq_send.assert_called_once_with(1, post, len(post), 3)
         self.assertEqual(shlib.mq_send.call_args[0][0], 1)
         self.assertEqual(shlib.mq_send.call_args[0][1], post)
@@ -46,8 +46,8 @@ class StatsdClientTest(unittest.TestCase):
         #shlib.mq_open.return_value = 1
         #shlib.mq_send.return_value = 0
 
-        Statsd.increment("mqtest")
+        Statsd.increment('mqtest')
         self.assertEqual(shlib.mq_open.call_count, 0)
 
-        #post = "mqtest:1|c"
+        #post = 'mqtest:1|c'
         self.assertEqual(shlib.mq_send.call_count, 0)

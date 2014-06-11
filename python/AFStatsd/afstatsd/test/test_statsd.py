@@ -17,7 +17,7 @@ except ImportError:
     sys.stderr.write("Dependency module posix_ipc is not installed.\n")
     exit(1)
 
-MQ_DESCRIPTOR = "/afcollectorapi"
+MQ_DESCRIPTOR = '/afcollectorapi'
 STATSD_SEVERITY = 3
 mqueue = None
 
@@ -36,7 +36,7 @@ def receive_msg():
             mqueue.request_notification(signal.SIGUSR1)
             break
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
         receive_msg()
         while True:
