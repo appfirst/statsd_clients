@@ -169,7 +169,7 @@ class Bucket(object):
         return self._to_udp_string()
 
 
-class CounterBucket(object):
+class CounterBucket(Bucket):
     def __init__(self, name, stat, rate=1):
         self.name = name
         self.stat = stat
@@ -188,7 +188,7 @@ class CounterBucket(object):
         self.stat += int(stat/self.rate)
 
 
-class TimerBucket(object):
+class TimerBucket(Bucket):
     def __init__(self, name, stat):
         self.name = name
         self.stat = [stat]
@@ -199,7 +199,7 @@ class TimerBucket(object):
         Sending up the full list of values by default so AppFirst can calculate
         the max/min during the interval as well.
         """
-        return "{0}|ms".format(','.join(self.stat))
+        return "{0}|ms".format(','.join([str(n) for n in self.stat]))
 
     def _to_udp_str(self):
         """
@@ -218,7 +218,7 @@ class TimerBucket(object):
         self.count += 1
 
 
-class GaugeBucket(object):
+class GaugeBucket(Bucket):
     def __init__(self, name, stat):
         self.name = name
         self.stat = stat
