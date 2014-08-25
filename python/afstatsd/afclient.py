@@ -22,7 +22,7 @@ except ImportError:
     win32file = None
     win32con = None
 
-from .client import UDPTransport, Statsd
+from client import UDPTransport, Statsd
 
 
 PYTHON3 = sys.version_info[0] == 3
@@ -104,7 +104,7 @@ class AFTransport(UDPTransport):
             if self.use_udp:
                 if self.verbosity and LOGGER:
                     LOGGER.info("Trying to use UDP Transport.")
-                UDPTransport.emit(self, data)
+                UDPTransport().emit(data)
         except Exception as e:
             self._handleError(data, str(e))
 

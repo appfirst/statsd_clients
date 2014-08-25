@@ -1,53 +1,43 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+"""
+Test the StatsD class and make sure returned bucket strings are correct
+"""
+
 import unittest
-from mock import MagicMock
 
-from afstatsd import Statsd, UDPTransport, AFTransport
+from afclient import AFTransport
+from client import UDPTransport, Statsd
+from client import CounterBucket, TimerBucket, GaugeBucket
 
 
-class StatsdClientTest(unittest.TestCase):
+class StatsDClientTest(unittest.TestCase):
+    """
+    TODO:
+        - Test Statsd class w/ aggregator
+        - Test AFTransport & UDPTransport
+    """
+    
+    def test_buckets(self):
+        # Set initial values
+        counter_bucket = CounterBucket('test.bucket.counter', 10)
+        gauge_bucket = GaugeBucket('test.bucket.gauge', 10)
+        timer_bucket = TimerBucket('test.bucket.timer', 10)
 
-    def test_build_message(self):
-        Statsd.set_transport(UDPTransport())
+        # Simulate sending second value & aggregate
+        counter_update = CounterBucket('test.bucket.counter', 5)
+        gauge_update = GaugeBucket('test.bucket.gauge', 5)
+        timer_update = TimerBucket('test.bucket.timer', 5)
+        counter_bucket.aggregate(counter_update.stat)
+        gauge_bucket.aggregate(gauge_update.stat)
+        timer_bucket.aggregate(timer_update.stat)
 
-        # Message without timestamp
-        self.assertEqual(Statsd._build_message({'test': '1|c'}), {'test': '1|c'})
+        # Test results
+        self.assertEqual(counter_bucket.format_string(), '15|c')
+        self.assertEqual(gauge_bucket.format_string(), '5|g|{0}'.format(gauge_bucket.timestamp))
+        self.assertEqual(timer_bucket.format_string(), '10,5|ms')
 
-        # with timestamp
-        self.assertEqual(Statsd._build_message({'testg': '1|g'}, 1, timestamp=1339793258),
-                         {'testg': '1|g|1339793258'})
 
-    def test_AFTransport(self):
-        shlib = MagicMock()
-        transport = AFTransport()
-
-        transport.shlib = shlib
-        Statsd.set_transport(transport)
-
-        shlib.mq_open.return_value = 1
-        shlib.mq_send.return_value = 0
-
-        Statsd.increment('mqtest')
-        shlib.mq_open.assert_called_once_with('/afcollectorapi', 0o4001)
-        self.assertEqual(shlib.mq_open.call_args[0][0], '/afcollectorapi')
-        self.assertEqual(shlib.mq_open.call_args[0][1], 0o4001)
-        post = 'mqtest:1|c'
-        shlib.mq_send.assert_called_once_with(1, post, len(post), 3)
-        self.assertEqual(shlib.mq_send.call_args[0][0], 1)
-        self.assertEqual(shlib.mq_send.call_args[0][1], post)
-        self.assertEqual(shlib.mq_send.call_args[0][2], len(post))
-        self.assertEqual(shlib.mq_send.call_args[0][3], 3)
-
-    def test_AFTransport_with_UDP(self):
-        shlib = MagicMock()
-        # TODO: not finished
-        transport = AFTransport(useUDP=True)
-        Statsd.set_transport(transport)
-
-        #shlib.mq_open.return_value = 1
-        #shlib.mq_send.return_value = 0
-
-        Statsd.increment('mqtest')
-        self.assertEqual(shlib.mq_open.call_count, 0)
-
-        #post = 'mqtest:1|c'
-        self.assertEqual(shlib.mq_send.call_count, 0)
+if __name__ == '__main__':
+    unittest.main()
