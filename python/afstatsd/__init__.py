@@ -1,2 +1,1 @@
-from .afclient import Statsd
-from .afclient import AFTransport
+from .afclient import Statsd, AFTransport, UDPTransport

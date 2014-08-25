@@ -1,11 +1,11 @@
 import unittest
 from mock import MagicMock
 
-from client import Statsd, UDPTransport
-from afclient import AFTransport
+from afstatsd import Statsd, UDPTransport, AFTransport
 
 
 class StatsdClientTest(unittest.TestCase):
+
     def test_build_message(self):
         Statsd.set_transport(UDPTransport())
 
