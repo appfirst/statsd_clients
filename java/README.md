@@ -1,4 +1,4 @@
-![Appfirst](http://www.appfirst.com/static/images/appfirst-logo.svg)
+![Appfirst](https://wwws.appfirst.com/site_media/images/af_logo_blue.svg)
 
 Java StatsD client for the [AppFirst](http://www.appfirst.com) collector
 ====================================
