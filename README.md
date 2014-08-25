@@ -38,10 +38,10 @@ AppFirst Statsd Clients
 -----------------------
 StatsD libraries with AppFirst extensions are available here in the following languages:
 
-- Java *(POSIX/Mailslot/UDP)*
-- Python *(POSIX/Mailslot/UDP)*
-- C# *(POSIX/Mailslot/UDP)*
-- Ruby *(POSIX/UDP)*
+- Java *(POSIX, Mailslot, UDP)*
+- Python *(POSIX, Mailslot, UDP)*
+- C# *(POSIX, Mailslot, UDP)*
+- Ruby *(POSIX, UDP)*
 
 Etsy-standard Statsd libraries are available in many other languages, and we have collected a few of them
 here for your convenience.
