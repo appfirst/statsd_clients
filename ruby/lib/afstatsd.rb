@@ -44,7 +44,7 @@ class Statsd
     attr_reader :prefix
 
     # a postfix to append to all metrics
-    attr_reader :postfix 
+    attr_reader :postfix
 
     # count of messages that were dropped due to transmit error
     attr_reader :dropped
@@ -200,7 +200,7 @@ class Statsd
     def timing(stat, ms, sample_rate=1)
         if sample_rate == 1 or rand < sample_rate
             send_metric StatsdMetrics::TMetric.new(expand_name(stat), ms.round, sample_rate)
-        end    
+        end
     end
 
     # Reports execution time of the provided block using {#timing}.
@@ -224,68 +224,74 @@ class Statsd
         # All the metric types above funnel to here.  We will send or aggregate.
         if aggregating
             @aggregator.add metric
-        else 
+        else
             @transport.call(metric)
         end
     end
 
     def expand_name(name)
         # Replace Ruby module scoping with '.' and reserved chars (: | @) with underscores.
-        name = name.to_s.gsub('::', '.').tr(':|@', '_') 
+        name = name.to_s.gsub('::', '.').tr(':|@', '_')
         "#{prefix}#{name}#{postfix}"
     end
 
     def udp_transport(metric)
         if @debugging
-            puts "socket < #{metric}\n" #debug
-        end    
-        self.class.logger.debug { "Statsd: #{metric}" } if self.class.logger
-        socket.send(metric.to_s(True), 0, @host, @port)
+            puts "Sending to UDP -- #{metric.to_s(true)} \n" #debug
+        end
+        self.class.logger.debug { "Statsd: #{metric.to_s(true)}" } if self.class.logger
+        socket.send(metric.to_s(true), 0, @host, @port)
         rescue => boom
-            #puts "socket send error"
             @dropped +=1
             self.class.logger.debug { "Statsd: #{boom.class} #{boom}" } if self.class.logger
+            if @debugging
+                puts "UDP: socket send error\n"
+            end
             nil
     end
 
     STATSD_SEVERITY = 3
     def mq_transport(metric)
         if @debugging
-            puts "MQ < #{metric}\n" #debug
-        end    
-        self.class.logger.debug { "Statsd: #{metric}" } if self.class.logger
-        if not @mq 
+            puts "Sending to MQ -- #{metric.to_s} \n" #debug
+        end
+        self.class.logger.debug { "Statsd: #{metric.to_s}" } if self.class.logger
+        if not @mq
             begin
                 @mq = POSIX_MQ.new("/afcollectorapi", Fcntl::O_WRONLY | Fcntl::O_NONBLOCK)
             rescue => boom
                 self.class.logger.debug { "Statsd: MQ open error #{boom.class} #{boom}" } if self.class.logger
+                if @debugging
+                    puts "Statsd: MQ open error. Fallback to UDP.\n"
+                end
                 # failed to open MQ.  Fall back to UPD transport.  Note:  Current message will be lost.
                 @dropped += 1
-                # puts "fallback to udp"
                 set_transport :udp_transport
                 return nil
-            end    
+            end
         end
         begin
             @mq.send(metric.to_s, STATSD_SEVERITY)
         rescue => boom
             # just drop it on the floor
             @dropped += 1
-            #puts "MQ send error: #{boom.class} #{boom}"
             self.class.logger.debug { "Statsd: MQ Send Error#{boom.class} #{boom}" } if self.class.logger
+            if @debugging
+                puts "Statsd: MQ send error: #{boom.class} #{boom}\n"
+            end
             nil
-        end    
+        end
     end
 
     def both_transport(metric)
         mq_transport(metric)
         udp_transport(metric)
     end
-    
+
     private
 
     def socket
         Thread.current[:statsd_socket] ||= UDPSocket.new
     end
-    
+
 end     # class Statsd

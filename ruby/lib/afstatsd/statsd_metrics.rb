@@ -8,18 +8,23 @@ class Metric
     attr_accessor :name
     attr_accessor :value
 
-    def to_s(udp=False)
+    def to_s(udp=false)
         # Handle differences in upload method if sending via UDP or to AppFirst
         if udp
-            return @_to_udp_s
+            _to_udp_s
         else
-            return @_to_af_s
+            _to_af_s
         end
+    end
+
+    def _to_udp_s
+        # Should be overridden by child class
+        raise NotImplementedError
     end
 
     def _to_af_s
         # Return the same value by default
-        return @_to_udp_s
+        _to_udp_s
     end
 
 end
