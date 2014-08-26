@@ -7,9 +7,9 @@ Test the StatsD class and make sure returned bucket strings are correct
 
 import unittest
 
-from afclient import AFTransport
-from client import UDPTransport, Statsd
-from client import CounterBucket, TimerBucket, GaugeBucket
+from ..afclient import AFTransport
+from ..client import UDPTransport, Statsd
+from ..client import CounterBucket, TimerBucket, GaugeBucket
 
 
 class StatsDClientTest(unittest.TestCase):

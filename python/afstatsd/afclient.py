@@ -1,5 +1,6 @@
 #!/usr/local/env python
 # -*- encoding: utf-8 -*-
+from __future__ import  absolute_import, print_function
 
 """
 The AppFirst Statsd Transport
@@ -22,7 +23,7 @@ except ImportError:
     win32file = None
     win32con = None
 
-from client import UDPTransport, Statsd
+from .client import UDPTransport, Statsd
 
 
 PYTHON3 = sys.version_info[0] == 3
