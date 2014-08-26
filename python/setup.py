@@ -9,5 +9,5 @@ setup(
     author_email='michael@appfirst.com',
     packages=['afstatsd', 'afstatsd.test'],
     url="https://github.com/appfirst/statsd_clients/tree/master/python",
-    long_description=open('README.md').read(),
+    long_description=open('README.txt').read(),
 )
