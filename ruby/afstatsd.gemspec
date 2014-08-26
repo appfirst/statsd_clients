@@ -1,10 +1,10 @@
 Gem::Specification.new do |s|
     s.name          = 'afstatsd'
-    s.version       = '0.0.7'
-    s.date          = '2014-05-14'
+    s.version       = '1.1.0'
+    s.date          = '2014-08-26'
     s.summary       = "AppFirst StatsD Library"
     s.description   = "A StatsD library with AppFirst Extensions"
-    s.authors       = ["Clark Bremer", "Mike Okner"]
+    s.authors       = ["Mike Okner", "Clark Bremer"]
     s.email         = 'michael@appfirst.com'
     s.license	    = 'APACHE'
     s.files         = ["lib/afstatsd.rb", 
@@ -12,5 +12,5 @@ Gem::Specification.new do |s|
                        "lib/afstatsd/statsd_metrics.rb",
                        "example/example.rb"]
     s.extensions    = ['ext/mkrf_conf.rb']
-    s.homepage      = 'http://appfirst.com'
+    s.homepage      = 'http://www.appfirst.com/'
 end

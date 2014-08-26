@@ -34,7 +34,7 @@ namespace Statsd
             FileStream fs = new FileStream(slotHandle, FileAccess.Write);
 
             UnicodeEncoding encoding = new UnicodeEncoding();
-            string data_string = string.Format("{0}:{1}:{2}", Process.GetCurrentProcess().Id, 3, "csharp.test.mailslot:1|c|");
+            string data_string = string.Format("{0}:{1}:{2}", Process.GetCurrentProcess().Id, 3, "csharp.test.mailslot:1|c");
             byte[] data_bytes = encoding.GetBytes(data_string);
             int byteCount = encoding.GetByteCount(data_string);
             fs.Write(data_bytes, 0, byteCount);

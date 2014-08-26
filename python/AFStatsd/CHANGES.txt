@@ -1,1 +1,0 @@
-v0.1.2, 5/15/2013 -- Fix bug when aggreagation turned off.

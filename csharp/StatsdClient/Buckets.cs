@@ -32,11 +32,8 @@ namespace Statsd
     public abstract class AbstractBucket : IBucket
     {
         private String name;
-        protected int stat=0;
-        protected HashSet<string> msgSet = new HashSet<string>();
-
-        private string field2 = null;
-
+        private int stat;
+        private String field2 = null;
 
         public String Field2
         {
@@ -54,69 +51,27 @@ namespace Statsd
             get { return this.stat; }
             set { this.stat = value; }
         }
- 
-        public HashSet<string> Msgs
-        {
-            get { return this.msgSet; }
-        }
-
 
         protected String GetStatsdString(int value, String unit)
         {
-            StringBuilder output = new StringBuilder(
-                String.Format("{0}:{1:d}|{2}", name, value, unit));
-            if (this.msgSet.Count > 0 || field2 != null)
-            {
-                output.Append("|");
-            }
-            if (field2 != null)
-            {
-                output.Append(field2);
-            }
-            foreach (string msg in this.msgSet)
-            {
-                output.Append("|");
-                output.Append(msg);
-            }
+            StringBuilder output = new StringBuilder(String.Format("{0}:{1:d}|{2}", name, value, unit));
             return output.ToString();
         }
 
-        protected void AddMessage(String message)
-        {
-            if (message != null && !message.Equals(""))
-            {
-                string[] submsgs = message.Split('|');
-                foreach (string sub in submsgs)
-                {
-                    this.msgSet.Add(sub);
-                }
-            }
-        }
-
-        public abstract void Infuse(int value, String message);
-        public abstract void Infuse(int value, HashSet<string> msgs);
+        public abstract void Infuse(int value);
     }
 
     public class CounterBucket : AbstractBucket
     {
 
-	    public override String ToString(){
-		    return this.GetStatsdString(this.stat, "c");
+	    public override String ToString()
+        {
+		    return this.GetStatsdString(this.Stat, "c");
 	    }
 
-        public override void Infuse(int value, String message)
+        public override void Infuse(int value)
         {
-            this.stat += value;
-            this.AddMessage(message);
-        }
-
-        public override void Infuse(int value, HashSet<string> msgs)
-        {
-            this.stat += value;
-            foreach (string s in msgs)
-            {
-                this.AddMessage(s);
-            }
+            this.Stat += value;
         }
 
     }
@@ -127,26 +82,15 @@ namespace Statsd
 
         public override String ToString()
         {
-            int avg = Convert.ToInt32(this.stat / this.count);
+            int avg = Convert.ToInt32(this.Stat / this.count);
             return this.GetStatsdString(avg, "ms");
 	    }
 
-        public override void Infuse(int value, String message)
+        public override void Infuse(int value)
         {
-		    this.stat += value;
+		    this.Stat += value;
             this.count++;
-            this.AddMessage(message);
 	    }
-
-        public override void Infuse(int value, HashSet<string> msgs)
-        {
-            this.stat += value;
-            this.count++;
-            foreach (string s in msgs)
-            {
-                this.AddMessage(s);
-            }
-        }
 
      }
 
@@ -157,25 +101,14 @@ namespace Statsd
         public override String ToString()
         {
             this.Field2 = Convert.ToString(timestamp);
-            return this.GetStatsdString(stat, "g");
+            return this.GetStatsdString(Stat, "g");
 	    }
 
-        public override void Infuse(int value, String message)
+        public override void Infuse(int value)
         {
-		    this.stat = value;
-            this.AddMessage(message);
-
+		    this.Stat = value;
             this.timestamp = TimestampHelper.Now;
 	    }
-
-        public override void Infuse(int value, HashSet<string> msgs)
-        {
-            this.stat = value;
-            foreach (string s in msgs)
-            {
-                this.AddMessage(s);
-            }
-        }
 
      }
 
@@ -213,7 +146,7 @@ namespace Statsd
 
 
         //[MethodImpl(MethodImplOptions.Synchronized)]
-        public void Accumulate<T>(String bucketname, int value, string message)
+        public void Accumulate<T>(String bucketname, int value)
             where T : IBucket
         {
             Type buckettype = typeof(T);
@@ -239,11 +172,8 @@ namespace Statsd
                 }
                 else
                 {
-                    string exMessage = String.Format(
-                        "{0} for name {1} is not matching {2} which was sent before",
-                        buckettype,
-                        rawbucket.Name,
-                        rawbucket.GetType());
+                    string exMessage = String.Format("{0} for name {1} is not matching {2} which was sent before",
+                                                     buckettype, rawbucket.Name, rawbucket.GetType());
                     throw new BucketTypeMismatchException(exMessage);
                 }
             }
@@ -253,7 +183,7 @@ namespace Statsd
                 bucket.Name = bucketname;
                 write_buffer.Add(bucketname, bucket);
             }
-            bucket.Infuse(value, message);
+            bucket.Infuse(value);
 	    }
 
         //[MethodImpl(MethodImplOptions.Synchronized)]
@@ -273,7 +203,7 @@ namespace Statsd
                     }
                     else
                     {
-                        dump_bucket.Infuse(Bucket.Stat, Bucket.Msgs);
+                        dump_bucket.Infuse(Bucket.Stat);
                     }
                 }
                 read_buffer.Clear();

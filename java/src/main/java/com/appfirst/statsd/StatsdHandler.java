@@ -11,10 +11,10 @@ public class StatsdHandler implements InvocationHandler {
 
 	private static volatile StatsdClient client;
 
-	private static StatsdClient getClient(){
+	private static StatsdClient getClient() {
 		if (client == null) {
-			synchronized(StatsdHandler.class){
-				if (client == null){
+			synchronized(StatsdHandler.class) {
+				if (client == null) {
 					client = new AFService();
 				}
 			}
@@ -22,18 +22,19 @@ public class StatsdHandler implements InvocationHandler {
 		return client;
 	}
 
-	public static void setStatsdClient(StatsdClient client){
+	public static void setStatsdClient(StatsdClient client) {
 		StatsdHandler.client = client;
 	}
 
-	public static Object proxy(Object object){
+	public static Object proxy(Object object) {
 		return Proxy.newProxyInstance(
-				object.getClass().getClassLoader(), 
-				object.getClass().getInterfaces(),
-				new StatsdHandler(object));
+			object.getClass().getClassLoader(), 
+			object.getClass().getInterfaces(),
+			new StatsdHandler(object)
+		);
 	}
 	
-	public StatsdHandler(Object object){
+	public StatsdHandler(Object object) {
 		this.object = object;
 	}
 
@@ -43,7 +44,7 @@ public class StatsdHandler implements InvocationHandler {
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		Object result = null;
 		Method objectMethod = object.getClass().getMethod(method.getName(), method.getParameterTypes());
-		if (objectMethod.isAnnotationPresent(Timing.class)){
+		if (objectMethod.isAnnotationPresent(Timing.class)) {
 			Timing timing = objectMethod.getAnnotation(Timing.class);
 			long startTime = System.currentTimeMillis();
 			result = method.invoke(object, args);
@@ -52,7 +53,7 @@ public class StatsdHandler implements InvocationHandler {
 		} else {
 			method.invoke(object, args);
 		}
-		if (objectMethod.isAnnotationPresent(Counting.class)){
+		if (objectMethod.isAnnotationPresent(Counting.class)) {
 			Counting counting = objectMethod.getAnnotation(Counting.class);
 			getClient().increment(counting.value());
 		}

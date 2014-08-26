@@ -17,18 +17,16 @@ import com.sun.jna.Platform;
  * @author Yangming
  * Convenient Proxy for StatsdClient using AFTransport and GeyserStrategy()
  */
-public class AFService extends DefaultService implements StatsdService{
+public class AFService extends DefaultService implements StatsdService {
 	final static Logger log = LoggerFactory.getLogger(AFService.class.getSimpleName());
 
-//	protected final Transport transport = new MixTransport();
-
-	private final class MixTransport implements Transport{
+	private final class MixTransport implements Transport {
 		private Transport transport = null;
 
-		public MixTransport(){
-			if (Platform.isLinux()){
+		public MixTransport() {
+			if (Platform.isLinux()) {
 				transport = new MqTransport();
-			} else if (Platform.isWindows()){
+			} else if (Platform.isWindows()) {
 				transport = new MailSlotTransport();
 			}
 		}
@@ -36,7 +34,7 @@ public class AFService extends DefaultService implements StatsdService{
 		private UdpTransport udpTransport;
 
 		private boolean doUDPSend(final String stat){
-			if (udpTransport == null){
+			if (udpTransport == null) {
 				try {
 					udpTransport = new UdpTransport();
 				} catch (Exception e) {
@@ -48,7 +46,7 @@ public class AFService extends DefaultService implements StatsdService{
 		}
 
 		@Override
-		public boolean doSend(final String stat){
+		public boolean doSend(final String stat) {
 			if (transport == null){
 				log.error(String.format("No Transport Available, sending UDP msg to localhost.", stat));
 				return this.doUDPSend(stat);
@@ -58,7 +56,7 @@ public class AFService extends DefaultService implements StatsdService{
 			} catch (LastErrorException e) {
 				log.error(String.format("Could not send stat, Error Code: %s", e.getErrorCode()));
 				return false;
-			} catch (UnsatisfiedLinkError ufe){
+			} catch (UnsatisfiedLinkError ufe) {
 				log.error(String.format("%s, sending UDP msg to localhost.", ufe.getMessage(), stat));
 				transport.close();
 				return this.doUDPSend(stat);
@@ -67,6 +65,15 @@ public class AFService extends DefaultService implements StatsdService{
 				log.error(String.format("Could not send stat %s with AFClient, sending UDP msg to localhost.", stat));
 				transport.close();
 				return this.doUDPSend(stat);
+			}
+		}
+		
+		@Override
+		public boolean isAppFirst() {
+			if (transport == null) {
+				return false;  // Will default to UDP
+			} else {
+				return transport.isAppFirst();
 			}
 		}
 
@@ -84,22 +91,16 @@ public class AFService extends DefaultService implements StatsdService{
 	}
 	
 	@Override
-    public Strategy getStrategy(){
-		if (strategy == null){
+    public Strategy getStrategy() {
+		if (strategy == null) {
 			this.setStrategy(StrategyFactory.getGeyserStrategy());
 		}
 		return this.strategy;
 	}
 
-//	@Override
-//	public Transport getTransport() {
-//		return transport;
-//	}
-
-	public static void main(String[] args){
-
+	public static void main(String[] args) {
 		StatsdService c = new AFService();
-		while (true){
+		while (true) {
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {

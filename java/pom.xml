@@ -3,13 +3,15 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.appfirst</groupId>
     <artifactId>java_statsd_client</artifactId>
-    <version>0.0.3</version>
+    <version>1.1.0</version>
+    <!--
     <repositories>
       <repository>
         <id>jna</id>
         <url>file://${project.basedir}/lib/repo</url>
       </repository>
     </repositories>
+    -->
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
         <defaultGoal>install</defaultGoal>
@@ -36,8 +38,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.8.1</version>
                 <configuration>
-                    <stylesheetfile>${project.basedir}/doc/xref/stylesheet.css</stylesheetfile>
-                    <javadocDirectory>${project.basedir}/doc/xref</javadocDirectory>
+                    <javadocDirectory>${project.basedir}/docs</javadocDirectory>
                     <docfilessubdirs>true</docfilessubdirs>
                 </configuration>
             </plugin>
@@ -63,10 +64,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <!-- mvn clean dependency:copy-dependencies -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <outputDirectory>
+                        ${project.basedir}/lib
+                    </outputDirectory>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <properties>
-        <jna.version>3.2.7</jna.version>
+        <jna.version>3.4.0</jna.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -84,12 +95,12 @@
         <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
-            <version>3.2.7</version>
+            <version>3.4.0</version>
         </dependency>
         <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>platform</artifactId>
-            <version>3.2.7</version>
+            <version>3.4.0</version>
         </dependency>
     </dependencies>
     <url>http://github.com/appfirst/statsd_client/java</url>

@@ -9,3 +9,7 @@ upload.py
 
 # "compiled" python
 *.pyc
+
+*.DS_Store
+*.swp
+*.swo

@@ -12,16 +12,12 @@ public class InstantStrategy implements Strategy {
 		this.transport = transport;
 	}
 
-	public <T extends Bucket> boolean send(
-			Class<T> clazz, 
-			String bucketname, 
-			int value, 
-			String message){
+	public <T extends Bucket> boolean send(Class<T> clazz, String bucketname, int value) {
 		try {
 			T bucket = clazz.newInstance();
 			bucket.setName(bucketname);
-			bucket.infuse(value, message);
-			transport.doSend(bucket.toString());
+			bucket.infuse(value);
+			transport.doSend(bucket.getOutput(transport.isAppFirst()));
 		} catch (InstantiationException e) {
 			e.printStackTrace();
 			return false;
@@ -31,5 +27,4 @@ public class InstantStrategy implements Strategy {
 		}
 		return true;
 	}
-
 }

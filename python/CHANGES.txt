@@ -1,0 +1,5 @@
+v1.1.0, 8/26/2014 -- [MLO] Revising upload format for timers
+v1.0.0, 5/16/2014 -- [MLO] Added windows mailslot compatibility
+v0.1.3, 5/14/2014 -- [MLO] Removed deprecated `message` field and added support
+                     for python 3.
+v0.1.2, 5/15/2013 -- Fix bug when aggreagation turned off.

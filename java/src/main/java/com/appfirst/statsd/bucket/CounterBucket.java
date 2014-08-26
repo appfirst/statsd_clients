@@ -1,12 +1,11 @@
 package com.appfirst.statsd.bucket;
 
-public class CounterBucket implements Bucket{
+public class CounterBucket implements Bucket {
 	private String name;
 	private int value = 0;
-	private String message = null;
 
 	@Override
-	public void setName(String name){
+	public void setName(String name) {
 		this.name = name;
 	}
 
@@ -16,25 +15,35 @@ public class CounterBucket implements Bucket{
 	}
 
 	@Override
-	public String toString(){
-		String stat = String.format("%s:%d|c",  name, this.value);
-		if (message != null && !message.equals("")){
-			stat += String.format("||%s", message);
-		} 
-		return stat;
+	public String getOutput() {
+		return this.getAfString();
 	}
-
+	
 	@Override
-	public void infuse(int value, String message){
-		this.value += value;
-		if (message != null && !message.equals("")){
-			if (this.message != null){
-				this.message += "|" + message;
-			} else {
-				this.message = message;
-			}
+	public String getOutput(Boolean isAppFirst) {
+		if (isAppFirst) {
+			return this.getAfString();
+		} else {
+			return this.getUdpString();
 		}
 	}
 	
-//	public void merge
+	@Override
+	public String toString() {
+		return this.getOutput();
+	}
+
+	@Override
+	public void infuse(int value) {
+		this.value += value;
+	}
+	
+	private String getUdpString() {
+		String stat = String.format("%s:%d|c", name, this.value);
+		return stat;
+	}
+	
+	private String getAfString() {
+		return this.getUdpString();
+	}
 }

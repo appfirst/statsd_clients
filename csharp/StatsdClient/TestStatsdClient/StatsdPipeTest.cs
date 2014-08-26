@@ -74,7 +74,7 @@ namespace TestStatsdClient
             string[] keys = null; // TODO: Initialize to an appropriate value
             bool expected = false; // TODO: Initialize to an appropriate value
             bool actual;
-            actual = target.UpdateCount(message, magnitude, keys);
+            actual = target.UpdateCount(magnitude, keys);
             Assert.AreEqual(expected, actual);
             Assert.Inconclusive("Verify the correctness of this test method.");
         }
@@ -113,24 +113,6 @@ namespace TestStatsdClient
         }
 
         /// <summary>
-        ///A test for UpdateCount
-        ///</summary>
-        [TestMethod()]
-        public void UpdateCountTest()
-        {
-            StatsdPipe target = new StatsdPipe(); // TODO: Initialize to an appropriate value
-            string message = string.Empty; // TODO: Initialize to an appropriate value
-            int magnitude = 0; // TODO: Initialize to an appropriate value
-            double sampleRate = 0F; // TODO: Initialize to an appropriate value
-            string[] keys = null; // TODO: Initialize to an appropriate value
-            bool expected = false; // TODO: Initialize to an appropriate value
-            bool actual;
-            actual = target.UpdateCount(message, magnitude, sampleRate, keys);
-            Assert.AreEqual(expected, actual);
-            Assert.Inconclusive("Verify the correctness of this test method.");
-        }
-
-        /// <summary>
         ///A test for Timing
         ///</summary>
         [TestMethod()]
@@ -147,23 +129,6 @@ namespace TestStatsdClient
         }
 
         /// <summary>
-        ///A test for Timing
-        ///</summary>
-        [TestMethod()]
-        public void TimingTest()
-        {
-            StatsdPipe target = new StatsdPipe(); // TODO: Initialize to an appropriate value
-            string message = string.Empty; // TODO: Initialize to an appropriate value
-            string key = string.Empty; // TODO: Initialize to an appropriate value
-            int value = 0; // TODO: Initialize to an appropriate value
-            bool expected = false; // TODO: Initialize to an appropriate value
-            bool actual;
-            actual = target.Timing(message, key, value);
-            Assert.AreEqual(expected, actual);
-            Assert.Inconclusive("Verify the correctness of this test method.");
-        }
-
-        /// <summary>
         ///A test for Increment
         ///</summary>
         [TestMethod()]
@@ -174,23 +139,6 @@ namespace TestStatsdClient
             bool expected = false; // TODO: Initialize to an appropriate value
             bool actual;
             actual = target.Increment(keys);
-            Assert.AreEqual(expected, actual);
-            Assert.Inconclusive("Verify the correctness of this test method.");
-        }
-
-        /// <summary>
-        ///A test for Gauge
-        ///</summary>
-        [TestMethod()]
-        public void GaugeTest1()
-        {
-            StatsdPipe target = new StatsdPipe(); // TODO: Initialize to an appropriate value
-            string message = string.Empty; // TODO: Initialize to an appropriate value
-            string key = string.Empty; // TODO: Initialize to an appropriate value
-            int value = 0; // TODO: Initialize to an appropriate value
-            bool expected = false; // TODO: Initialize to an appropriate value
-            bool actual;
-            actual = target.Gauge(message, key, value);
             Assert.AreEqual(expected, actual);
             Assert.Inconclusive("Verify the correctness of this test method.");
         }

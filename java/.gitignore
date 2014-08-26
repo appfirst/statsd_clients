@@ -1,7 +1,11 @@
+# Compiled files
 *.class
+bin/
+target/
+lib/
+*.jar
 
 # Package Files #
-#*.jar
 *.war
 *.ear
 *.DS_Store
@@ -15,3 +19,5 @@ target/surefire-reports/
 .settings/
 .externalToolBuilders/
 src/test/java/com/appfirst/statsd/test/TestSynchronized.java
+.metadata/
+src/metadata/

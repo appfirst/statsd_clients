@@ -23,14 +23,20 @@ public class MockService extends DefaultService implements StatsdService, Iterab
 	}
 
 	public Transport getTransport(){
-		return new Transport(){
+		return new Transport() {
 
 			@Override
 			public boolean doSend(String stat) {
 				return output.add(stat);
 			}
 
+			@Override
+			public boolean isAppFirst() {
+				return true;
+			}
+			
 			@Override public void close() {}
 		};
 	}
+
 }
