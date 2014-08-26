@@ -7,8 +7,8 @@ require 'afstatsd/statsd_aggregator'
 require 'monitor'
 require 'fcntl'
 
-# = Statsd: A Statsd client (https://github.com/appfirst/statsd_clients)
-#                           (https://github.com/etsy/statsd)
+# = Statsd: An AppFirst Statsd client
+#   (https://github.com/appfirst/statsd_clients/tree/master/ruby)
 #
 # @example Set up a global Statsd client for a server on localhost:9125,
 #                                aggregate 20 seconds worth of metrics
@@ -59,13 +59,13 @@ class Statsd
 
     # @param [String] host your statsd host
     # @param [Integer] port your statsd port
-    # @param [Integer] interval for aggregatore
-    def initialize(host = '127.0.0.1', port = 8125, interval = 20)
+    # @param [Integer] interval for aggregator
+    def initialize(host='127.0.0.1', port=8125, interval=20, transport='mq')
         self.host, self.port = host, port
         @prefix = nil
         @postfix = nil
         @aggregator = StatsdAggregator.new(interval)
-	if RUBY_PLATFORM =~ /linux/i
+        if RUBY_PLATFORM =~ /linux/i and transport == 'mq'
             set_transport :mq_transport
         else
             set_transport :udp_transport
@@ -240,7 +240,7 @@ class Statsd
             puts "socket < #{metric}\n" #debug
         end    
         self.class.logger.debug { "Statsd: #{metric}" } if self.class.logger
-        socket.send(metric.to_s, 0, @host, @port)
+        socket.send(metric.to_s(True), 0, @host, @port)
         rescue => boom
             #puts "socket send error"
             @dropped +=1

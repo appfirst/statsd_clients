@@ -7,6 +7,21 @@ class Metric
     # all metrics share these
     attr_accessor :name
     attr_accessor :value
+
+    def to_s(udp=False)
+        # Handle differences in upload method if sending via UDP or to AppFirst
+        if udp
+            return @_to_udp_s
+        else
+            return @_to_af_s
+        end
+    end
+
+    def _to_af_s
+        # Return the same value by default
+        return @_to_udp_s
+    end
+
 end
 
 class CMetric < Metric
@@ -21,14 +36,14 @@ class CMetric < Metric
         @value += delta        #accumulate
     end
 
-    def to_s
+    def _to_udp_s
         if @sample_rate == 1 then r = "" else r = "|@#{@sample_rate}" end
         "#{name}:#{@value}|c#{r}"
     end
 end
 
 class GMetric < Metric
-    # Guage
+    # Gauge
     def initialize(name, value)
         @name = name
         @value = value
@@ -38,7 +53,7 @@ class GMetric < Metric
         @value = value        #overwrite
     end
 
-    def to_s
+    def _to_udp_s
         "#{name}:#{@value}|g"
     end
 
@@ -48,19 +63,25 @@ class TMetric < Metric
     # Timing
     def initialize(name, value, rate=1)
         @name = name
-        @value = value
-        @sample_rate = rate
+        @value = [value]
         @count = 1
     end
 
     def aggregate(value)
-        @value += value        #average
+        # Value is another TMetric @value attribute (Array)
+        @value += value
         @count += 1
     end
 
-    def to_s
-        avg = @value / @count
+    def _to_udp_s
+        sumvals = @value.inject(0) {|sum, i|  sum + i }
+        avg = sumvals / @count
         "#{name}:#{avg}|ms"
+    end
+
+    def _to_af_s
+        vals = @value.join(",")
+        "#{name}:#{vals}|ms"
     end
 
 end
@@ -76,7 +97,7 @@ class SMetric < Metric
         @value = value        #overwrite
     end
 
-    def to_s
+    def _to_udp_s
         "#{name}:#{@value}|s"
     end
 

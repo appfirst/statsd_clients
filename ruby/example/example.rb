@@ -1,6 +1,6 @@
 require 'afstatsd'
 
-#$statsd = Statsd.new 'statsd_server.my_company.com', 8125, 20
+#$statsd = Statsd.new 'statsd_server.my_company.com', 8125, 20, 'udp'
 
 $statsd = Statsd.new     # use defaults
 $statsd.namespace = 'test.ruby'
