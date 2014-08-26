@@ -44,7 +44,7 @@ $statsd = Statsd.new 'localhost', 8125
 Or, to only use UDP, set the aggregation period to 0 and specify the `'udp'` parameter like so:
 
 ```ruby
-$statsd = Statsd.new 'localhost' 8125 0 'udp'
+$statsd = Statsd.new 'localhost', 8125, 0, 'udp'
 ```
 
 The client object in this example is a global for convenience, but this is not a requirement.
