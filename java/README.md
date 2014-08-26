@@ -5,7 +5,8 @@ Java StatsD client for the [AppFirst](http://www.appfirst.com) collector
 
 This Java StatsD client includes several AppFirst extensions:
 
-- Metrics are aggregated over 20-second periods before being transmitted to an endpoint in order to minimize overhead and size of data in uploads.
+- Metrics are aggregated over 20-second periods before being transmitted to an endpoint in order to minimize
+  overhead and size of data in uploads.
 - Data is sent to the local collector via Mailslot or POSIX message queue instead of over UDP.
 
 By default, both of those features are enabled, but the client can be configured
@@ -15,48 +16,24 @@ Installation
 ------------
 
 This client can be compiled with [Maven](https://maven.apache.org/) by running `mvn package`. Compiled
-files will be put in the `target/` directory.
+jars will be put in the `target/` directory.
 
 
 Configuration
 -------------
 
-Create a new AFClient instance:
+Create a new AFService instance:
 
 ```java
-import com.appfirst.statsd.StatsdClient;
-import com.appfirst.statsd.AFClient;
+import com.appfirst.statsd.StatsdService;
+import com.appfirst.statsd.AFService;
 
-StatsdClient stats = new AFClient();
+StatsdService stats = new AFService();
 ```
 
 There is no additional configuration necessary to use the StatsD client with default
 configuration. By default, the client will use the message queue transport and aggregation
 will be enabled.
-
-## 
-
-The message queue is configured by the AppFirst collector. At the current
-time, it is set accept about 200 messages per second. If overrun,
-messages will be dropped. The Sample Rate feature can be used to mitigate this issue (outlined further below).
-
-This StatsD client can also send data the "Etsy standard" upload method using a UDP socket.
-This can be useful if transitioning from some other StatsD implementation to the AppFirst
-implementation:
-
-```java
-import com.appfirst.statsd.StatsdClient;
-import com.appfirst.statsd.UDPClient;
-
-public class SomeClass {
-
-	public static void main() {
-		StatsdClient stats = new UDPClient();
-		stats.increment("bucket");
-	}
-
-}
-```
 
 Usage
 -----
@@ -81,7 +58,7 @@ boolean updateStats(int value, double sampleRate, String... buckets);
 Example:
 
 ```java
-StatsdClient stats = new AFClient();
+StatsdService stats = new AFService();
 // increment several counters
 stats.increment("af.example.counter1", "af.example.counter2");
 // Decrement a counter
@@ -99,7 +76,7 @@ boolean gauge(String bucket, int value);
 Example:
 
 ```java
-StatsdClient stats = new AFClient();
+StatsdService stats = new AFService();
 // Set the gauge value
 stats.gauge("af.example.gauge", 500);
 // Update the gauge value
@@ -115,19 +92,7 @@ boolean timing(String bucket, int value);
 Example:
 
 ```java
-StatsdClient stats = new AFClient();
+StatsdService stats = new AFService();
 // Report that an action took 237 milliseconds
 stats.timing("ecommerce.checkout", 237);
 ```
-
-Sample Rate
------------
-
-If your application records a significant number of statistics, the `AFClient` transport may fill up its
-message queue and the `UDPClient` may introduce too much network traffic. Sampling can resolve that.
-
-By passing a `sampleRate` to `updateStats`, the client will only send `(sampleRate * 100)%` of the **counter** messages at **random** and discard the rest. The message will carry this rate, and the server will restore the count by multiply `1/sampleRate` upon reception.
-
-By default the `sampleRate` is alway 1, which means every message will be sent.
-
-Note this is a **counter** only feature, `sampleRate` for **timer** and **gauge** will be ignored.
