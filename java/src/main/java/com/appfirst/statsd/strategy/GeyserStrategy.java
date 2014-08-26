@@ -104,7 +104,7 @@ public final class GeyserStrategy implements Strategy{
 			Map<String, Bucket> dumpcellar = buffer.withdraw();
 			log.debug(dumpcellar.values().toString());
 			for (Bucket bucket : dumpcellar.values()){
-				transport.doSend(bucket.toString());
+				transport.doSend(bucket.getOutput(transport.isAppFirst()));
 			}
 		}
 	}

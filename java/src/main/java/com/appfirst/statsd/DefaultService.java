@@ -25,19 +25,18 @@ import com.appfirst.statsd.transport.UdpTransport;
  * by Andrew Gwozdziewycz <andrew@meetup.com>, @apgwoz
  * 
  * @author Yangming Huang @leonmax
- * @author (maintainer) Mike Okner (michael@appfirst.com)
+ * @author Mike Okner (michael@appfirst.com) (maintainer)
  */
 public class DefaultService implements StatsdService {
 	protected Strategy strategy = null;
 	protected Transport transport = null;
-
 	private final static Random RNG = new Random();
 
 	/* (non-Javadoc)
 	 * @see com.appfirst.statsd.StatsdService#setStrategy(com.appfirst.statsd.strategy.Strategy)
 	 */
 	@Override
-    public StatsdService setStrategy(Strategy strategy){
+    public StatsdService setStrategy(Strategy strategy) {
 		this.strategy = strategy;
 		this.strategy.setTransport(this.getTransport());
 		// for chaining purpose
@@ -48,8 +47,8 @@ public class DefaultService implements StatsdService {
 	 * @see com.appfirst.statsd.StatsdService#getStrategy()
 	 */
 	@Override
-    public Strategy getStrategy(){
-		if (strategy == null){
+    public Strategy getStrategy() {
+		if (strategy == null) {
 			this.setStrategy(new InstantStrategy());
 		}
 		return this.strategy;
@@ -124,7 +123,7 @@ public class DefaultService implements StatsdService {
 	 * @see com.appfirst.statsd.StatsdService#getTransport()
 	 */
 	@Override
-    public Transport getTransport(){
+    public Transport getTransport() {
 		if (transport == null){
 			try {
 				this.transport = new UdpTransport();

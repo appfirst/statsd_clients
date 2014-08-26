@@ -52,6 +52,11 @@ public class MqTransport implements Transport {
 		return AFCReturnCode.AFCSuccess == AFCReturnCode.valueOf(rc);
 	}
 	
+	@Override
+	public boolean isAppFirst() {
+		return true;
+	}
+	
 	public void close(){
 		if (this.mqd >= 0){
 			try{

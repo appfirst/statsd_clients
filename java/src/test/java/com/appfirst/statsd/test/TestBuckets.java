@@ -19,7 +19,7 @@ public class TestBuckets {
 		bucket.infuse(1);
 		bucket.infuse(2);
 		bucket.infuse(4);
-		String actual = bucket.toString();
+		String actual = bucket.getOutput();
 		String expected = "counter:7|c";
 		assertEquals("Aggregated stat", expected, actual);
 	}
@@ -31,8 +31,8 @@ public class TestBuckets {
 		bucket.infuse(1);
 		bucket.infuse(3);
 		bucket.infuse(5);
-		String actual = bucket.toString();
-		String expected = "timer:3|ms";
+		String actual = bucket.getOutput();
+		String expected = "timer:1,3,5|ms";
 		assertEquals("Aggregated stat", expected, actual);
 	}
 
@@ -50,7 +50,7 @@ public class TestBuckets {
 			Thread.sleep(1);
 
 			bucket.infuse(5);
-			actual = bucket.toString();
+			actual = bucket.getOutput();
 
 			Thread.sleep(1);
 		} catch (InterruptedException e) {

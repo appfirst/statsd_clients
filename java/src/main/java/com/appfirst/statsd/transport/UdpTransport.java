@@ -87,6 +87,11 @@ public class UdpTransport implements Transport{
 	}
 	
 	@Override
+	public boolean isAppFirst() {
+		return false;
+	}
+	
+	@Override
 	public void close(){
 	}
 }

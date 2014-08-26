@@ -79,6 +79,11 @@ public class MailSlotTransport implements Transport {
 		}
 		// return true;
 	}
+	
+	@Override
+	public boolean isAppFirst() {
+		return true;
+	}
 
 	public void close() {
 		log.debug("closing mailslot");

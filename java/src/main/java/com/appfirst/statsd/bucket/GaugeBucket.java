@@ -19,11 +19,33 @@ public class GaugeBucket implements Bucket {
 	}
 
 	@Override
+	public String getOutput() {
+		return this.getAfString();
+	}
+	
+	@Override
+	public String getOutput(Boolean isAppFirst) {
+		if (isAppFirst) {
+			return this.getAfString();
+		} else {
+			return this.getUdpString();
+		}
+	}
+	
+	@Override
 	public String toString() {
+		return this.getOutput();
+	}
+
+	private String getUdpString() {
 		String stat = null;
 		int avg = this.sumstat/this.count;
-		stat = String.format("%s:%d|g|%s",  name, avg, timestamp);
+		stat = String.format("%s:%d|g|%s", name, avg, timestamp);
 		return stat;
+	}
+	
+	private String getAfString() {
+		return this.getUdpString();
 	}
 
 	@Override

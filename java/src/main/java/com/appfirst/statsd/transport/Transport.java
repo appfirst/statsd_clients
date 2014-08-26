@@ -9,6 +9,13 @@ public interface Transport {
 	 * @return True if success, False otherwise.
 	 */
 	boolean doSend(String stat);
+	
+	/**
+	 * This method is used to determine how data should be formatted when sent up to the server.
+	 * If being sent to AppFirst (via POSIX MQ or Windows Mailslot), it should return true.
+	 * @return True if an AppFirst transport type, False otherwise.
+	 */
+	boolean isAppFirst();
 
 	/**
 	 * To close a transport, most of the transport need to release resources properly

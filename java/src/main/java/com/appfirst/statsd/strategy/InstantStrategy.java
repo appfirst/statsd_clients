@@ -17,7 +17,7 @@ public class InstantStrategy implements Strategy {
 			T bucket = clazz.newInstance();
 			bucket.setName(bucketname);
 			bucket.infuse(value);
-			transport.doSend(bucket.toString());
+			transport.doSend(bucket.getOutput(transport.isAppFirst()));
 		} catch (InstantiationException e) {
 			e.printStackTrace();
 			return false;
