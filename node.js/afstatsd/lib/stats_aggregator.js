@@ -25,7 +25,10 @@ module.exports.Aggregator = function() {
         for (var bucket_name in this.buffer) {
             var bucket = this.buffer[bucket_name];
             var bucket_out = bucket.getOutputString();
-            if ((master_out + '::' + bucket_out).length < this.max_len) {
+            if (master_out === "") {
+                master_out = bucket_out;
+            }
+            else if ((master_out + '::' + bucket_out).length < this.max_len) {
                 // Concatenate multiple messages so we are less likely to bump
                 // into the 200 message limit
                 master_out = master_out + '::' + bucket_out;
@@ -38,8 +41,10 @@ module.exports.Aggregator = function() {
         }
 
         // Publish the final round of data currently in `master_out`
-        var buffer = new Buffer(master_out);
-        mq.push(buffer);
+        if (master_out !== '') {
+            var buffer = new Buffer(master_out);
+            mq.push(buffer);
+        }
 
         // Reset the buffer
         this.buffer = {};
