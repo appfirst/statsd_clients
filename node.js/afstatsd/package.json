@@ -1,8 +1,8 @@
 {
   "name": "afstatsd",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "description": "A StatsD client for use with the AppFirst collector",
-  "main": "lib/main.js",
+  "main": "lib/stats_client.js",
   "directories": {
     "test": "test"
   },

@@ -2,7 +2,7 @@
 
 var PosixMQ = require('pmq');
 var mq = new PosixMQ();
-mq.open({name: '/afcollectorapi', flags: 'write_only'});
+mq.open({name: '/afcollectorapi', flags: 2049});  // O_WRONLY | O_NONBLOCK: 2049
 
 module.exports.Aggregator = function() {
     this.buffer = {};
@@ -34,16 +34,14 @@ module.exports.Aggregator = function() {
                 master_out = master_out + '::' + bucket_out;
             } else {
                 // We've hit the max. Publish and start over
-                var buffer = new Buffer(master_out);
-                mq.push(buffer);
+                mq.push(master_out, 3);
                 master_out = bucket_out;
             }
         }
 
         // Publish the final round of data currently in `master_out`
         if (master_out !== '') {
-            var buffer = new Buffer(master_out);
-            mq.push(buffer);
+            mq.push(master_out, 3);
         }
 
         // Reset the buffer

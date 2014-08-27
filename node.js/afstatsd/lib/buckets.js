@@ -18,13 +18,15 @@ buckets.CounterBucket = function(name, value) {
 buckets.GaugeBucket = function(name, value) {
     this.name = name;
     this.value = value;
+    this.timestamp = null;
 
     this.aggregate = function(value) {
         this.value = value;
+        this.timestamp = (new Date().getTime() / 1000).toFixed(0);
     };
 
     this.getOutputString = function() {
-        return this.name + ":" + this.value + "|g";
+        return this.name + ":" + this.value + "|g|" + this.timestamp;
     };
 };
 
