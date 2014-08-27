@@ -1,19 +1,8 @@
-# Compiled files
-*.class
-bin/
-target/
-lib/
-*.jar
-
 # Package Files #
 *.war
 *.ear
 *.DS_Store
 
-manifest.mf
-target/classes/
-target/test-classes/
-target/surefire-reports/
 .classpath
 .project
 .settings/

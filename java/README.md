@@ -15,8 +15,10 @@ to use UDP (like the Etsy-standard) instead of the message queue.
 Installation
 ------------
 
-This client can be compiled with [Maven](https://maven.apache.org/) by running `mvn package`. Compiled
-jars will be put in the `target/` directory.
+Compiled jars are available in the `target/` directory and can be included in your project
+by simply adding them to your `CLASSPATH`.
+
+This client can also be compiled with [Maven](https://maven.apache.org/) by running `mvn package`.
 
 
 Configuration
