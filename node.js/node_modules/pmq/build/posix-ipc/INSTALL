@@ -1,7 +1,0 @@
-To install, just use the normal setup.py routine:
-
-python setup.py install
-
-If you get a permissions error, try this:
-
-sudo python setup.py install
