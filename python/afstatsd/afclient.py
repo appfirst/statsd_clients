@@ -44,7 +44,7 @@ class AFTransport(UDPTransport):
         if PYTHON3:
             # Convert from Python 3's default unicode
             self.mqueue_name = self.mqueue_name.encode('ascii')
-        self.flags = 0o4001
+        self.flags = 0o4001  # O_WRONLY | O_NONBLOCK
         self.msgLen = 2048
         self.mqueue = None
         self.verbosity = verbosity
