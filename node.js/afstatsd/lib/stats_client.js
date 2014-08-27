@@ -33,14 +33,14 @@ Statsd.increment = function(name) {
     /* Increments a counter with name `name` by value. If value is not specified,
      * `name` is incremented by 1.
      */
-    return updateStats(name, 1);
+    return this.updateStats(name, 1);
 };
 
 Statsd.decrement = function(name) {
     /* Decrements a counter with name `name` by value. If value is not specified,
      * `name` is decremented by 1.
      */
-    return updateStats(name, -1);
+    return this.updateStats(name, -1);
 };
 
 Statsd.gauge = function(name, value) {
@@ -56,11 +56,10 @@ Statsd.timing = function(name, value) {
 function cleanup_handler() {
     /* Do any cleanup and exit */
     aggregator.flush();
-
     process.exit();
 }
 
-setInterval(aggregator.flush, 20000);  // Every 20 seconds, flush data to collector
+setInterval(function() { aggregator.flush(); }, 20000);  // Every 20 seconds, flush data to collector
 
 /* Register cleanup exit events */
 process.on('SIGINT', cleanup_handler);

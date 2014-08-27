@@ -1,12 +1,12 @@
 /* Tracks state of current metrics and sends them up to the Collector ever 20 secs */
 
 var PosixMQ = require('pmq');
-var mq = new PosixMQ();
-mq.open({name: '/afcollectorapi', flags: 2049});  // O_WRONLY | O_NONBLOCK: 2049
 
 module.exports.Aggregator = function() {
     this.buffer = {};
     this.max_len = 2048;
+    this.mq = new PosixMQ();
+    this.mq.open({name: '/afcollectorapi', flags: 2049});  // O_WRONLY | O_NONBLOCK: 2049
 
     this.handle = function(bucket) {
         /* Aggregate values till a flush is called */
@@ -34,14 +34,14 @@ module.exports.Aggregator = function() {
                 master_out = master_out + '::' + bucket_out;
             } else {
                 // We've hit the max. Publish and start over
-                mq.push(master_out, 3);
+                this.mq.push(master_out, 3);
                 master_out = bucket_out;
             }
         }
 
         // Publish the final round of data currently in `master_out`
         if (master_out !== '') {
-            mq.push(master_out, 3);
+            this.mq.push(master_out, 3);
         }
 
         // Reset the buffer

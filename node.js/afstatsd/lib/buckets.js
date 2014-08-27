@@ -18,7 +18,7 @@ buckets.CounterBucket = function(name, value) {
 buckets.GaugeBucket = function(name, value) {
     this.name = name;
     this.value = value;
-    this.timestamp = null;
+    this.timestamp = (new Date().getTime() / 1000).toFixed(0);
 
     this.aggregate = function(value) {
         this.value = value;
@@ -32,14 +32,14 @@ buckets.GaugeBucket = function(name, value) {
 
 buckets.TimerBucket = function(name, value) {
     this.name = name;
-    this.values = value;
+    this.value = [value];
 
     this.aggregate = function(value) {
-        this.values.push(value);
+        this.value.push(value[0]);
     };
 
     this.getOutputString = function() {
-        return this.name + ":" + ','.join(this.values) + "|ms";
+        return this.name + ":" + this.value.join(',') + "|ms";
     };
 };
 
