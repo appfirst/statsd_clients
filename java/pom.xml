@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.appfirst</groupId>
     <artifactId>java_statsd_client</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <!--
     <repositories>
       <repository>

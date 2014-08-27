@@ -120,11 +120,11 @@ public final class GeyserStrategy implements Strategy{
 					else {
 						writebuf = writebuf + "::" + bucket_output;
 					}
-					if (writebuf != "") {
-						// flush final output
-					    transport.doSend(writebuf);
-					}
 				}
+                if (writebuf != "") {
+                    // flush final output
+                    transport.doSend(writebuf);
+                }
 			} else {
 				for (Bucket bucket : dumpcellar.values()) {
 					// Send the buckets one at a time to server
