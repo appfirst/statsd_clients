@@ -7,6 +7,8 @@ This Node.js StatsD client includes several AppFirst extensions:
 - Metrics are aggregated over 20-second periods before being transmitted to an endpoint in order to minimize overhead and size of data in uploads.
 - Data is sent to the local collector via AFTransport (POSIX message queue) instead of over UDP.
 
+If you are looking for an Etsy-standard UDP client, we recommend [this client](https://github.com/sivy/node-statsd).
+
 Installation
 ------------
 Using npm:

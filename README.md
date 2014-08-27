@@ -42,6 +42,7 @@ StatsD libraries with AppFirst extensions are available here in the following la
 - Python *(POSIX, Mailslot, UDP)*
 - C# *(POSIX, Mailslot, UDP)*
 - Ruby *(POSIX, UDP)*
+- Node.js *(POSIX)*
 
 Etsy-standard Statsd libraries are available in many other languages, and we have collected a few of them
 here for your convenience.
