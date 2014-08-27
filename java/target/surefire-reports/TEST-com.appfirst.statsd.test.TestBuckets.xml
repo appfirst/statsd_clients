@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite failures="0" time="0.006" errors="0" skipped="0" tests="3" name="com.appfirst.statsd.test.TestBuckets">
+<testsuite failures="0" time="0.008" errors="0" skipped="0" tests="3" name="com.appfirst.statsd.test.TestBuckets">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Libraries"/>
@@ -64,7 +64,7 @@
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="sun.cpu.isalist" value=""/>
   </properties>
-  <testcase time="0.003" classname="com.appfirst.statsd.test.TestBuckets" name="testCounter"/>
+  <testcase time="0.004" classname="com.appfirst.statsd.test.TestBuckets" name="testCounter"/>
   <testcase time="0" classname="com.appfirst.statsd.test.TestBuckets" name="testTimer"/>
-  <testcase time="0.003" classname="com.appfirst.statsd.test.TestBuckets" name="testGauge"/>
+  <testcase time="0.004" classname="com.appfirst.statsd.test.TestBuckets" name="testGauge"/>
 </testsuite>

@@ -99,17 +99,42 @@ public final class GeyserStrategy implements Strategy{
 		return true;
 	}
 
-	private void flush(){
-		if (!buffer.isEmpty()){
+	private void flush() {
+		/* Flush currently buffered buckets to server */
+		if (!buffer.isEmpty()) {
 			Map<String, Bucket> dumpcellar = buffer.withdraw();
 			log.debug(dumpcellar.values().toString());
-			for (Bucket bucket : dumpcellar.values()){
-				transport.doSend(bucket.getOutput(transport.isAppFirst()));
+			if (transport.isAppFirst()) {
+				// Concatenate values up to max length to use fewer queue messages
+				// TODO: optimize with StringBuilder
+				String writebuf = "";
+				for (Bucket bucket : dumpcellar.values()) {
+					String bucket_output = bucket.getOutput(true);
+					if (writebuf == "") {
+						writebuf = bucket_output;
+					}
+					else if ((writebuf + "::" + bucket_output).length() >= 2048) {
+						transport.doSend(writebuf);
+						writebuf = bucket_output;
+					} 
+					else {
+						writebuf = writebuf + "::" + bucket_output;
+					}
+					if (writebuf != "") {
+						// flush final output
+					    transport.doSend(writebuf);
+					}
+				}
+			} else {
+				for (Bucket bucket : dumpcellar.values()) {
+					// Send the buckets one at a time to server
+					transport.doSend(bucket.getOutput(false));
+				}
 			}
 		}
 	}
 
-	private GeyserStrategy(){
+	private GeyserStrategy() {
 		this.setShutdownHook();
 	}
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite failures="0" time="0.001" errors="0" skipped="0" tests="6" name="com.appfirst.statsd.test.TestStatsdClient">
+<testsuite failures="0" time="0" errors="0" skipped="0" tests="6" name="com.appfirst.statsd.test.TestStatsdClient">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Libraries"/>
@@ -68,6 +68,6 @@
   <testcase time="0" classname="com.appfirst.statsd.test.TestStatsdClient" name="testTimingStringInt"/>
   <testcase time="0" classname="com.appfirst.statsd.test.TestStatsdClient" name="testDecrement"/>
   <testcase time="0" classname="com.appfirst.statsd.test.TestStatsdClient" name="testIncrement"/>
-  <testcase time="0.001" classname="com.appfirst.statsd.test.TestStatsdClient" name="testUpdateStatsIntStringArray"/>
+  <testcase time="0" classname="com.appfirst.statsd.test.TestStatsdClient" name="testUpdateStatsIntStringArray"/>
   <testcase time="0" classname="com.appfirst.statsd.test.TestStatsdClient" name="testUpdateStatsIntDoubleStringArray"/>
 </testsuite>
