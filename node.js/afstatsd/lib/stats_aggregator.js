@@ -1,6 +1,6 @@
 /* Tracks state of current metrics and sends them up to the Collector ever 20 secs */
 
-var PosixMQ = require('pmq');
+var PosixMQ = require('posix-mq');
 
 module.exports.Aggregator = function() {
     this.buffer = {};

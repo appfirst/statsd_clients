@@ -1,6 +1,6 @@
 {
   "name": "afstatsd",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A StatsD client for use with the AppFirst collector (http://www.appfirst.com/)",
   "main": "lib/stats_client.js",
   "directories": {
@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/appfirst/statsd_clients",
   "dependencies": {
-    "pmq": "",
+    "posix-mq": "",
     "process": ""
   }
 }
