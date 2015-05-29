@@ -23,7 +23,7 @@ except ImportError:
     win32file = None
     win32con = None
 
-from .client import UDPTransport, Statsd
+from client import UDPTransport, Statsd
 
 
 PYTHON3 = sys.version_info[0] == 3
